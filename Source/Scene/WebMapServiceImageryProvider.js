@@ -29,7 +29,7 @@ define([
         UrlTemplateImageryProvider) {
     "use strict";
 
-    /**
+/**
      * Provides tiled imagery hosted by a Web Map Service (WMS) server.
      *
      * @alias WebMapServiceImageryProvider
