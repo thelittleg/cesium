@@ -42,16 +42,16 @@ define([
      * when.all([loadImageViaBlob('image1.png'), loadImageViaBlob('image2.png')]).then(function(images) {
      *     // images is an array containing all the loaded images
      * });
-     * 
+     *
      * @see {@link http://www.w3.org/TR/cors/|Cross-Origin Resource Sharing}
      * @see {@link http://wiki.commonjs.org/wiki/Promises/A|CommonJS Promises/A}
      */
-    function loadImageViaBlob(url) {
+    function loadImageViaBlob(url, options) {
         if (dataUriRegex.test(url)) {
             return loadImage(url);
         }
 
-        return loadBlob(url).then(function(blob) {
+        return loadBlob(url, options).then(function(blob) {
             var blobUrl = window.URL.createObjectURL(blob);
 
             return loadImage(blobUrl, false).then(function(image) {
