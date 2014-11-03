@@ -52,10 +52,11 @@ define([
      *     // handle loaded image
      *   });
      * }
-     * 
+     *
      * @see {@link http://wiki.commonjs.org/wiki/Promises/A|CommonJS Promises/A}
      */
-    function throttleRequestByServer(url, requestFunction) {
+    // THELITTLEG
+    function throttleRequestByServer(url, requestFunction, options) {
         var server = getServer(url);
 
         var activeRequestsForServer = defaultValue(activeRequests[server], 0);
@@ -64,8 +65,8 @@ define([
         }
 
         activeRequests[server] = activeRequestsForServer + 1;
-
-        return when(requestFunction(url), function(result) {
+        // THELITTLEG
+        return when(requestFunction(url, options), function(result) {
             activeRequests[server]--;
             return result;
         }).otherwise(function(error) {

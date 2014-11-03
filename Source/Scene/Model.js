@@ -1,9 +1,9 @@
 /*global define*/
 define([
-        '../Core/BoundingSphere',
-        '../Core/Cartesian2',
-        '../Core/Cartesian3',
-        '../Core/Cartesian4',
+    '../Core/BoundingSphere',
+    '../Core/Cartesian2',
+    '../Core/Cartesian3',
+    '../Core/Cartesian4',
         '../Core/clone',
         '../Core/combine',
         '../Core/ComponentDatatype',
@@ -1120,7 +1120,7 @@ define([
             var loadResources = model._loadResources;
             loadResources.buffers[id] = new Uint8Array(arrayBuffer);
             --loadResources.pendingBufferLoads;
-         };
+        };
     }
 
     function parseBuffers(model) {
@@ -1166,7 +1166,7 @@ define([
                 bufferView : undefined
             };
             --loadResources.pendingShaderLoads;
-         };
+        };
     }
 
     function parseShaders(model) {
@@ -1834,7 +1834,7 @@ define([
                  var parameters = animation.parameters;
                  var samplers = animation.samplers;
 
-                 var parameterValues = {};
+                var parameterValues = {};
 
                  for (var name in parameters) {
                      if (parameters.hasOwnProperty(name)) {
@@ -1842,21 +1842,21 @@ define([
                      }
                  }
 
-                 // Find start and stop time for the entire animation
-                 var startTime = Number.MAX_VALUE;
-                 var stopTime = -Number.MAX_VALUE;
+                // Find start and stop time for the entire animation
+                var startTime = Number.MAX_VALUE;
+                var stopTime = -Number.MAX_VALUE;
 
-                 var length = channels.length;
-                 var channelEvaluators = new Array(length);
+                var length = channels.length;
+                var channelEvaluators = new Array(length);
 
-                 for (var i = 0; i < length; ++i) {
-                     var channel = channels[i];
-                     var target = channel.target;
-                     var sampler = samplers[channel.sampler];
-                     var times = parameterValues[sampler.input];
+                for (var i = 0; i < length; ++i) {
+                    var channel = channels[i];
+                    var target = channel.target;
+                    var sampler = samplers[channel.sampler];
+                    var times = parameterValues[sampler.input];
 
-                     startTime = Math.min(startTime, times[0]);
-                     stopTime = Math.max(stopTime, times[times.length - 1]);
+                    startTime = Math.min(startTime, times[0]);
+                    stopTime = Math.max(stopTime, times[times.length - 1]);
 
                      var spline = ModelAnimationCache.getAnimationSpline(model, animationId, animation, channel.sampler, sampler, parameterValues);
                      // GLTF_SPEC: Support more targets like materials. https://github.com/KhronosGroup/glTF/issues/142
@@ -3309,7 +3309,7 @@ define([
      *
      * @example
      * model = model && model.destroy();
-     * 
+     *
      * @see Model#isDestroyed
      */
     Model.prototype.destroy = function() {
@@ -3326,6 +3326,8 @@ define([
         for (var i = 0; i < length; ++i) {
             pickIds[i].destroy();
         }
+
+        releaseCachedGltf(this);
 
         releaseCachedGltf(this);
 
