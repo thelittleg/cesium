@@ -349,46 +349,6 @@
 		</copy>
 	</target>
 
-	<target name="combineJavaScriptNotWorker.create">
-		<!-- create relative paths because r.js can't handle full Windows paths -->
-		<property name="relativeAlmondPath" location="${almondPath}" relative="true" basedir="${sourceDirectory}" />
-		<property name="combineOutputDirectory" location="${buildDirectory}/combineOutput" />
-
-		<mkdir dir="${combineOutputDirectory}" />
-		<property name="relativeCombineOutputDirectory" location="${combineOutputDirectory}" relative="true" basedir="${sourceDirectory}" />
-
-		<!-- create combined Cesium.js	-->
-		<antcall target="combineJavaScript.combineCesium" />
-
-		<mkdir dir="${buildStubsDirectory}" />
-		<generateStubs stuboutput="${buildStubsDirectory}/Cesium.js" pathsoutput="${buildStubsDirectory}/paths.js">
-			<sourcefiles refid="cesiumJsFiles" />
-		</generateStubs>
-
-		<!-- create combined Cesium.js workers -->
-		<!--antcall target="combineJavaScript.combineCesiumWorkers" /-->
-
-		<!-- copy to build folder with copyright header added at the top -->
-		<copy todir="${outputDirectory}">
-			<fileset dir="${combineOutputDirectory}" />
-			<filterchain>
-				<concatfilter prepend="${sourceDirectory}/copyrightHeader.js" />
-			</filterchain>
-		</copy>
-
-		<delete dir="${combineOutputDirectory}" />
-
-		<!-- copy other resources -->
-		<copy todir="${outputDirectory}" includeEmptyDirs="false">
-			<fileset dir="${sourceDirectory}">
-				<exclude name="**/*.js" />
-				<exclude name="**/*.glsl" />
-				<exclude name="**/.gitignore" />
-				<exclude name="**/package.json" />
-			</fileset>
-		</copy>
-	</target>
-
 	<target name="combineJavaScript.combineCesium" depends="combineJavaScript.combineCesium.check" unless="no.combineCesium.create">
 		<exec executable="${nodePath}" dir="${sourceDirectory}">
 			<arg value="${rjsPath}" />
