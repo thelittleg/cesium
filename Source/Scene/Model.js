@@ -118,6 +118,11 @@ define([
     if (!FeatureDetection.supportsTypedArrays()) {
         return {};
     }
+// Bail out if the browser doesn't support typed arrays, to prevent the setup function
+    // from failing, since we won't be able to create a WebGL context anyway.
+    if (!FeatureDetection.supportsTypedArrays()) {
+        return {};
+    }
 
     var yUpToZUp = Matrix4.fromRotationTranslation(Matrix3.fromRotationX(CesiumMath.PI_OVER_TWO));
     var boundingSphereCartesian3Scratch = new Cartesian3();
@@ -3356,6 +3361,10 @@ define([
         for (var i = 0; i < length; ++i) {
             pickIds[i].destroy();
         }
+
+        releaseCachedGltf(this);
+
+        releaseCachedGltf(this);
 
         releaseCachedGltf(this);
 
