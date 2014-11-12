@@ -1,4 +1,4 @@
-<project name="Cesium" default="combine">
+	<project name="Cesium" default="combine">
 	<target name="build" description="A developer build that prepares the source tree for use as standard AMD modules.">
 		<mkdir dir="${buildDirectory}" />
 		<glslToJavascript minify="${build.minification}" minifystatefile="${buildDirectory}/minifyShaders.state">
@@ -22,6 +22,12 @@
 	</target>
 
 	<target name="combine" depends="build,combineJavaScript" description="Combines all source files into a single stand-alone script." />
+
+	<target name="combineNotWorker">
+		<antcall target="combine">
+			<param name="build.workers" value="false" />
+		</antcall>
+	</target>
 
 	<target name="minify" description="Combines all source files into a single stand-alone, minified script.">
 		<antcall target="combine">
@@ -99,6 +105,7 @@
 
 	<!-- properties controlling which steps get run -->
 	<property name="build.minification" value="false" />
+	<property name="build.workers" value="true" />
 	<property name="pragmas.debug" value="true" />
 
 	<!-- properties controlling how to run the server-->
@@ -107,7 +114,7 @@
 
 	<!-- Inputs -->
 	<!-- this version should be set to the upcoming version, so it can be tagged without requiring a bump first -->
-	<property name="version" value="1.2" />
+	<property name="version" value="1.3" />
 	<property name="sourceDirectory" location="Source" />
 	<property name="shadersDirectory" location="${sourceDirectory}/Shaders" />
 	<property name="examplesDirectory" location="Examples" />
@@ -357,7 +364,7 @@
 		</exec>
 	</target>
 
-	<target name="combineJavaScript.combineCesiumWorkers" depends="combineJavaScript.combineCesiumWorkers.check" unless="no.combineCesiumWorkers.create">
+	<target name="combineJavaScript.combineCesiumWorkers" depends="combineJavaScript.combineCesiumWorkers.check" unless="no.combineCesiumWorkers.create" if="${build.workers}">
 		<!-- create standalone worker files -->
 		<apply executable="${nodePath}" dir="${sourceDirectory}" relative="true" force="true">
 			<arg value="${rjsPath}" />

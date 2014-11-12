@@ -5,6 +5,7 @@ define([
         '../Core/Cartesian3',
         '../Core/Cartesian4',
         '../Core/combine',
+        '../Core/clone',
         '../Core/defaultValue',
         '../Core/defined',
         '../Core/defineProperties',
@@ -44,6 +45,7 @@ define([
         Cartesian3,
         Cartesian4,
         combine,
+        clone,
         defaultValue,
         defined,
         defineProperties,
@@ -80,7 +82,7 @@ define([
     "use strict";
     /*global WebGLRenderingContext*/
 
-    var yUpToZUp = Matrix4.fromRotationTranslation(Matrix3.fromRotationX(CesiumMath.PI_OVER_TWO), Cartesian3.ZERO);
+    var yUpToZUp = Matrix4.fromRotationTranslation(Matrix3.fromRotationX(CesiumMath.PI_OVER_TWO));
 
     var ModelState = {
         NEEDS_LOAD : 0,
@@ -480,7 +482,7 @@ define([
      * and shader files are downloaded and the WebGL resources are created, the {@link Model#readyToRender} event is fired.
      *
      * @param {Object} options Object with the following properties:
-     * @param {String} options.url The url to the glTF .json file.
+     * @param {String} options.url The url to the .gltf file.
      * @param {Object} [options.headers] HTTP headers to send with the request.
      * @param {Boolean} [options.show=true] Determines if the model primitive will be shown.
      * @param {Matrix4} [options.modelMatrix=Matrix4.IDENTITY] The 4x4 transformation matrix that transforms the model from model to world coordinates.
@@ -535,15 +537,12 @@ define([
             basePath = url.substring(0, i + 1);
         }
 
+        options = clone(options);
+        options.basePath = basePath;
         var model = new Model(options);
 
         loadText(url, options.headers).then(function(data) {
             model._gltf = gltfDefaults(JSON.parse(data));
-            model._basePath = basePath;
-
-            var docUri = new Uri(document.location.href);
-            var modelUri = new Uri(model._basePath);
-            model._baseUri = modelUri.resolve(docUri);
         }).otherwise(getFailedLoadFunction(model, 'gltf', url));
 
         return model;
@@ -1402,7 +1401,6 @@ define([
         booleanStates[WebGLRenderingContext.CULL_FACE] = false;
         booleanStates[WebGLRenderingContext.DEPTH_TEST] = false;
         booleanStates[WebGLRenderingContext.POLYGON_OFFSET_FILL] = false;
-        booleanStates[WebGLRenderingContext.SAMPLE_COVERAGE] = false;
         booleanStates[WebGLRenderingContext.SCISSOR_TEST] = false;
 
         var enable = states.enable;
@@ -1442,7 +1440,6 @@ define([
                     var colorMask = defaultValue(statesFunctions.colorMask, [true, true, true, true]);
                     var depthRange = defaultValue(statesFunctions.depthRange, [0.0, 1.0]);
                     var polygonOffset = defaultValue(statesFunctions.polygonOffset, [0.0, 0.0]);
-                    var sampleCoverage = defaultValue(statesFunctions.sampleCoverage, [0.0, 0.0]);
                     var scissor = defaultValue(statesFunctions.scissor, [0.0, 0.0, 0.0, 0.0]);
 
                     rendererRenderStates[name] = context.createRenderState({
@@ -1495,11 +1492,6 @@ define([
                             functionSourceAlpha : blendFuncSeparate[1],
                             functionDestinationRgb : blendFuncSeparate[2],
                             functionDestinationAlpha : blendFuncSeparate[3]
-                        },
-                        sampleCoverage : {
-                            enabled : booleanStates[WebGLRenderingContext.SAMPLE_COVERAGE],
-                            value : sampleCoverage[0],
-                            invert : sampleCoverage[1]
                         }
                     });
                 }

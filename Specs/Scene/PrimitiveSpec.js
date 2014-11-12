@@ -127,11 +127,46 @@ defineSuite([
         expect(primitive.show).toEqual(true);
         expect(primitive.vertexCacheOptimize).toEqual(false);
         expect(primitive.interleave).toEqual(false);
+        expect(primitive.compressVertices).toEqual(true);
         expect(primitive.releaseGeometryInstances).toEqual(true);
         expect(primitive.allowPicking).toEqual(true);
+        expect(primitive.cull).toEqual(true);
         expect(primitive.asynchronous).toEqual(true);
         expect(primitive.debugShowBoundingVolume).toEqual(false);
-        expect(primitive.compressVertices).toEqual(true);
+    });
+
+    it('Constructs with options', function() {
+        var geometryInstances = {};
+        var appearance = {};
+        var modelMatrix = Matrix4.fromUniformScale(5.0);
+
+        var primitive = new Primitive({
+            geometryInstances : geometryInstances,
+            appearance : appearance,
+            modelMatrix : modelMatrix,
+            show : false,
+            vertexCacheOptimize : true,
+            interleave : true,
+            compressVertices : false,
+            releaseGeometryInstances : false,
+            allowPicking : false,
+            cull : false,
+            asynchronous : false,
+            debugShowBoundingVolume : true
+        });
+
+        expect(primitive.geometryInstances).toEqual(geometryInstances);
+        expect(primitive.appearance).toEqual(appearance);
+        expect(primitive.modelMatrix).toEqual(modelMatrix);
+        expect(primitive.show).toEqual(false);
+        expect(primitive.vertexCacheOptimize).toEqual(true);
+        expect(primitive.interleave).toEqual(true);
+        expect(primitive.compressVertices).toEqual(false);
+        expect(primitive.releaseGeometryInstances).toEqual(false);
+        expect(primitive.allowPicking).toEqual(false);
+        expect(primitive.cull).toEqual(false);
+        expect(primitive.asynchronous).toEqual(false);
+        expect(primitive.debugShowBoundingVolume).toEqual(true);
     });
 
     it('releases geometry instances when releaseGeometryInstances is true', function() {
@@ -461,9 +496,7 @@ defineSuite([
             debugShowBoundingVolume : true
         }));
         scene.camera.viewRectangle(rectangle1);
-        scene.initializeFrame();
-        scene.render();
-        var pixels = scene.context.readPixels();
+        var pixels = scene.renderForSpecs();
         expect(pixels[0]).not.toEqual(0);
         expect(pixels[1]).toBeGreaterThanOrEqualTo(0);
         expect(pixels[2]).toBeGreaterThanOrEqualTo(0);
@@ -662,6 +695,21 @@ defineSuite([
         primitive = primitive && primitive.destroy();
     });
 
+    it('does not cull when cull is false', function() {
+        var primitive = new Primitive({
+            geometryInstances : rectangleInstance1,
+            appearance : new PerInstanceColorAppearance(),
+            asynchronous : false,
+            cull : false
+        });
+
+        var commands = [];
+        primitive.update(context, frameState, commands);
+        expect(commands[0].cull).toEqual(false);
+
+        primitive = primitive && primitive.destroy();
+    });
+
     it('update throws when geometry primitive types are different', function() {
         var primitive = new Primitive({
             geometryInstances : [
@@ -705,7 +753,8 @@ defineSuite([
             appearance : new MaterialAppearance({
                 materialSupport : MaterialAppearance.MaterialSupport.ALL
             }),
-            asynchronous : false
+            asynchronous : false,
+            compressVertices : false
         });
 
         expect(function() {

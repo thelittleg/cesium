@@ -95,7 +95,7 @@ defineSuite([
             // Render scene to progressively load the model
             scene.renderForSpecs();
             return model.ready;
-        }, url + ' readyToRender', 10000);
+        }, url + ' ready', 10000);
 
         return model;
     }
@@ -232,11 +232,6 @@ defineSuite([
                 functionSourceAlpha : WebGLRenderingContext.ONE,
                 functionDestinationRgb : WebGLRenderingContext.ZERO,
                 functionDestinationAlpha : WebGLRenderingContext.ZERO
-            },
-            sampleCoverage : {
-                enabled : false,
-                value : 0.0,
-                invert : 0.0
             }
         };
 
