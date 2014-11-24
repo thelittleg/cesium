@@ -28,11 +28,13 @@ define([
      *     // an error occurred
      * });
      */
-    var loadArrayBuffer = function(url, headers) {
+    var loadArrayBuffer = function(url, options) {
         return loadWithXhr({
             url : url,
             responseType : 'arraybuffer',
-            headers : headers
+            headers :  defined(options)?options.headers:undefined,
+            overrideMimeType: defined(options)?options.overrideMimeType:undefined,
+            withCredentials: defined(options)?options.withCredentials:undefined
         });
     };
 

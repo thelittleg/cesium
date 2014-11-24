@@ -152,6 +152,7 @@ define([
         this._tilingScheme = defined(options.tilingScheme) ? options.tilingScheme : new GeographicTilingScheme();
         // THELITTLEG
         this._headers = options.headers;
+        this._withCredentials = options.withCredentials;
 
         this._rectangle = Rectangle.intersectWith(this._rectangle, this._tilingScheme.rectangle);
 
@@ -398,6 +399,12 @@ define([
             get: function(){
                 return this._headers;
             }
+        },
+
+        withCredentials : {
+            get: function(){
+                return this._withCredentials;
+            }
         }
     });
 
@@ -489,12 +496,13 @@ define([
 
         var url;
 
+        var that = this;
+
         if (this._getFeatureInfoAsGeoJson) {
             url = buildGetFeatureInfoUrl(this, 'application/json', x, y, level, i, j);
 
-            var that = this;
             // THELITTLEG
-            return when(loadJson(url, this._headers), function(json) {
+            return when(loadJson(url, {headers: that._headers, withCredentials: this._withCredentials}), function(json) {
                 return geoJsonToFeatureInfo(json);
             }, function(e) {
                 // GeoJSON failed, try XML.
@@ -504,14 +512,14 @@ define([
 
                 url = buildGetFeatureInfoUrl(that, 'text/xml', x, y, level, i, j);
                 // THELITTLEG
-                return when(loadXML(url, this._headers), function(xml) {
+                return when(loadXML(url, {headers:that._headers, withCredentials: this._withCredentials}), function(xml) {
                     return xmlToFeatureInfo(xml);
                 });
             });
         } else if (this._getFeatureInfoAsXml) {
             url = buildGetFeatureInfoUrl(this, 'text/xml', x, y, level, i, j);
             // THELITTLEG
-            return when(loadXML(url, this._headers), function(xml) {
+            return when(loadXML(url, {headers:that._headers, withCredentials: this._withCredentials}), function(xml) {
                 return xmlToFeatureInfo(xml);
             });
         } else {

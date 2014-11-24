@@ -31,10 +31,12 @@ define([
      *     // an error occurred
      * });
      */
-    var loadText = function(url, headers) {
+    var loadText = function(url, options) {
         return loadWithXhr({
             url : url,
-            headers : headers
+            headers : defined(options)?options.headers:undefined,
+            overrideMimeType: defined(options)?options.overrideMimeType:undefined,
+            withCredentials: defined(options)?options.withCredentials:undefined
         });
     };
 

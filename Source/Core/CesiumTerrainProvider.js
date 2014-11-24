@@ -245,7 +245,7 @@ define([
     };
 
     function loadTileVertexNormals(url) {
-        return loadArrayBuffer(url, requestHeadersVertexNormals);
+        return loadArrayBuffer(url, {headers:requestHeadersVertexNormals});
     }
 
     var requestHeadersDefault = {
@@ -254,7 +254,7 @@ define([
     };
 
     function loadTile(url) {
-        return loadArrayBuffer(url, requestHeadersDefault);
+        return loadArrayBuffer(url, {headers:requestHeadersDefault});
     }
 
     function createHeightmapTerrainData(provider, buffer, level, x, y, tmsY) {
