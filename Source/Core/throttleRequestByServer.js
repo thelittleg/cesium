@@ -56,7 +56,7 @@ define([
      * }
      */
     // THELITTLEG
-    var throttleRequestByServer = function(requestFunction, url, headers) {
+    var throttleRequestByServer = function(requestFunction, url, options) {
         var server = getServer(url);
 
         var activeRequestsForServer = defaultValue(activeRequests[server], 0);
@@ -66,7 +66,7 @@ define([
 
         activeRequests[server] = activeRequestsForServer + 1;
         // THELITTLEG
-        return when(requestFunction(url, headers), function(result) {
+        return when(requestFunction(url, options), function(result) {
             activeRequests[server]--;
             return result;
         }).otherwise(function(error) {

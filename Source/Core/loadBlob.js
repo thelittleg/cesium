@@ -28,11 +28,12 @@ define([
      *     // an error occurred
      * });
      */
-    var loadBlob = function(url, headers) {
+    var loadBlob = function(url, options) {
         return loadWithXhr({
             url : url,
             responseType : 'blob',
-            headers : headers
+            headers :  defined(options)?option.headers:undefined,
+            withCredentials: defined(options)?options.withCredentials:undefined
         });
     };
 
