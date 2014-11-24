@@ -1,18 +1,18 @@
 /*global define*/
 define([
-        '../ThirdParty/when',
-        './defaultValue',
-        './defined',
-        './DeveloperError',
-        './RequestErrorEvent',
-        './RuntimeError'
-    ], function(
-        when,
-        defaultValue,
-        defined,
-        DeveloperError,
-        RequestErrorEvent,
-        RuntimeError) {
+    '../ThirdParty/when',
+    './defaultValue',
+    './defined',
+    './DeveloperError',
+    './RequestErrorEvent',
+    './RuntimeError'
+], function(
+    when,
+    defaultValue,
+    defined,
+    DeveloperError,
+    RequestErrorEvent,
+    RuntimeError) {
     "use strict";
 
     /**
@@ -102,23 +102,23 @@ define([
         var data = dataUriRegexResult[3];
 
         switch (responseType) {
-        case '':
-        case 'text':
-            return decodeDataUriText(isBase64, data);
-        case 'arraybuffer':
-            return decodeDataUriArrayBuffer(isBase64, data);
-        case 'blob':
-            var buffer = decodeDataUriArrayBuffer(isBase64, data);
-            return new Blob([buffer], {
-                type : mimeType
-            });
-        case 'document':
-            var parser = new DOMParser();
-            return parser.parseFromString(decodeDataUriText(isBase64, data), mimeType);
-        case 'json':
-            return JSON.parse(decodeDataUriText(isBase64, data));
-        default:
-            throw new DeveloperError('Unhandled responseType: ' + responseType);
+            case '':
+            case 'text':
+                return decodeDataUriText(isBase64, data);
+            case 'arraybuffer':
+                return decodeDataUriArrayBuffer(isBase64, data);
+            case 'blob':
+                var buffer = decodeDataUriArrayBuffer(isBase64, data);
+                return new Blob([buffer], {
+                    type : mimeType
+                });
+            case 'document':
+                var parser = new DOMParser();
+                return parser.parseFromString(decodeDataUriText(isBase64, data), mimeType);
+            case 'json':
+                return JSON.parse(decodeDataUriText(isBase64, data));
+            default:
+                throw new DeveloperError('Unhandled responseType: ' + responseType);
         }
     }
 
