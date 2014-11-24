@@ -39,27 +39,31 @@ define([
      * }).otherwise(function(error) {
      *     // an error occurred
      * });
-     * 
+     *
      * @see loadText
      * @see {@link http://www.w3.org/TR/cors/|Cross-Origin Resource Sharing}
      * @see {@link http://wiki.commonjs.org/wiki/Promises/A|CommonJS Promises/A}
      */
-    function loadJson(url, headers) {
+    function loadJson(url, options) {
         //>>includeStart('debug', pragmas.debug);
         if (!defined(url)) {
             throw new DeveloperError('url is required.');
         }
         //>>includeEnd('debug');
 
-        if (!defined(headers)) {
-            headers = defaultHeaders;
-        } else if (!defined(headers.Accept)) {
-            // clone before adding the Accept header
-            headers = clone(headers);
-            headers.Accept = defaultHeaders.Accept;
+        if (!defined(options)) {
+            options = {};
         }
 
-        return loadText(url, headers).then(function(value) {
+        if (!defined(options.headers)) {
+            options.headers = defaultHeaders;
+        } else if (!defined(options.headers.Accept)) {
+            // clone before adding the Accept header
+            options.headers = clone(options.headers);
+            options.headers.Accept = defaultHeaders.Accept;
+        }
+
+        return loadText(url, options).then(function(value) {
             return JSON.parse(value);
         });
     }

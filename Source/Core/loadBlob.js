@@ -25,15 +25,16 @@ define([
      * }).otherwise(function(error) {
      *     // an error occurred
      * });
-     * 
+     *
      * @see {@link http://www.w3.org/TR/cors/|Cross-Origin Resource Sharing}
      * @see {@link http://wiki.commonjs.org/wiki/Promises/A|CommonJS Promises/A}
      */
-    function loadBlob(url, headers) {
+    function loadBlob(url, options) {
         return loadWithXhr({
             url : url,
             responseType : 'blob',
-            headers : headers
+            headers :  defined(options)?option.headers:undefined,
+            withCredentials: defined(options)?options.withCredentials:undefined
         });
     }
 

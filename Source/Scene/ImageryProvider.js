@@ -308,7 +308,8 @@ define([
     ImageryProvider.loadImage = function(imageryProvider, url) {
         if (defined(imageryProvider.tileDiscardPolicy)) {
             // THELITTLEG
-            return throttleRequestByServer(loadImageViaBlob, url, imageryProvider.headers);
+            return throttleRequestByServer(loadImageViaBlob, url, {headers:imageryProvider.headers,
+                                            withCredentials: imageryProvider.withCredentials});
         }
         // THELITTLEG
         return throttleRequestByServer(loadImage, url);
