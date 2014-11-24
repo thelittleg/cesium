@@ -47,12 +47,12 @@ define([
      */
 
     // THELITTLEG
-    var loadImageViaBlob = function(url, headers) {
+    var loadImageViaBlob = function(url, options) {
         if (dataUriRegex.test(url)) {
             return loadImage(url);
         }
         // THELITTLEG
-        return loadBlob(url, headers).then(function(blob) {
+        return loadBlob(url, options).then(function(blob) {
             var blobUrl = window.URL.createObjectURL(blob);
 
             return loadImage(blobUrl, false).then(function(image) {

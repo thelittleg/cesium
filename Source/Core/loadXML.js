@@ -31,12 +31,13 @@ define([
      *     // an error occurred
      * });
      */
-    var loadXML = function(url, headers) {
+    var loadXML = function(url, options) {
         return loadWithXhr({
             url : url,
             responseType : 'document',
-            headers : headers,
-            overrideMimeType : 'text/xml'
+            headers : defined(options)?options.headers:undefined,
+            overrideMimeType : 'text/xml',
+            withCredentials:defined(options)?options.withCredentials:undefined
         });
     };
 
