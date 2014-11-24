@@ -1,84 +1,88 @@
 /*global define*/
 define([
-        '../Core/BoundingSphere',
-        '../Core/Cartesian2',
-        '../Core/Cartesian3',
-        '../Core/Cartesian4',
-        '../Core/combine',
-        '../Core/clone',
-        '../Core/defaultValue',
-        '../Core/defined',
-        '../Core/defineProperties',
-        '../Core/destroyObject',
-        '../Core/DeveloperError',
-        '../Core/Event',
-        '../Core/IndexDatatype',
-        '../Core/loadArrayBuffer',
-        '../Core/loadImage',
-        '../Core/loadText',
-        '../Core/Math',
-        '../Core/Matrix2',
-        '../Core/Matrix3',
-        '../Core/Matrix4',
-        '../Core/PrimitiveType',
-        '../Core/Quaternion',
-        '../Core/Queue',
-        '../Core/RuntimeError',
-        '../Renderer/BufferUsage',
-        '../Renderer/DrawCommand',
-        '../Renderer/ShaderSource',
-        '../Renderer/TextureMinificationFilter',
-        '../Renderer/TextureWrap',
-        '../ThirdParty/gltfDefaults',
-        '../ThirdParty/Uri',
-        './getModelAccessor',
-        './ModelAnimationCache',
-        './ModelAnimationCollection',
-        './ModelMaterial',
-        './ModelMesh',
-        './ModelNode',
-        './Pass',
-        './SceneMode'
-    ], function(
-        BoundingSphere,
-        Cartesian2,
-        Cartesian3,
-        Cartesian4,
-        combine,
-        clone,
-        defaultValue,
-        defined,
-        defineProperties,
-        destroyObject,
-        DeveloperError,
-        Event,
-        IndexDatatype,
-        loadArrayBuffer,
-        loadImage,
-        loadText,
-        CesiumMath,
-        Matrix2,
-        Matrix3,
-        Matrix4,
-        PrimitiveType,
-        Quaternion,
-        Queue,
-        RuntimeError,
-        BufferUsage,
-        DrawCommand,
-        ShaderSource,
-        TextureMinificationFilter,
-        TextureWrap,
-        gltfDefaults,
-        Uri,
-        getModelAccessor,
-        ModelAnimationCache,
-        ModelAnimationCollection,
-        ModelMaterial,
-        ModelMesh,
-        ModelNode,
-        Pass,
-        SceneMode) {
+    '../ThirdParty/when',
+    '../Core/BoundingSphere',
+    '../Core/Cartesian2',
+    '../Core/Cartesian3',
+    '../Core/Cartesian4',
+    '../Core/combine',
+    '../Core/clone',
+    '../Core/defaultValue',
+    '../Core/defined',
+    '../Core/defineProperties',
+    '../Core/destroyObject',
+    '../Core/DeveloperError',
+    '../Core/Event',
+    '../Core/IndexDatatype',
+    '../Core/loadArrayBuffer',
+    '../Core/loadImage',
+    '../Core/loadText',
+    '../Core/Math',
+    '../Core/Matrix2',
+    '../Core/Matrix3',
+    '../Core/Matrix4',
+    '../Core/PrimitiveType',
+    '../Core/Quaternion',
+    '../Core/Queue',
+    '../Core/RuntimeError',
+    '../Core/throttleRequestByServer',
+    '../Renderer/BufferUsage',
+    '../Renderer/DrawCommand',
+    '../Renderer/ShaderSource',
+    '../Renderer/TextureMinificationFilter',
+    '../Renderer/TextureWrap',
+    '../ThirdParty/gltfDefaults',
+    '../ThirdParty/Uri',
+    './getModelAccessor',
+    './ModelAnimationCache',
+    './ModelAnimationCollection',
+    './ModelMaterial',
+    './ModelMesh',
+    './ModelNode',
+    './Pass',
+    './SceneMode'
+], function(
+    when,
+    BoundingSphere,
+    Cartesian2,
+    Cartesian3,
+    Cartesian4,
+    combine,
+    clone,
+    defaultValue,
+    defined,
+    defineProperties,
+    destroyObject,
+    DeveloperError,
+    Event,
+    IndexDatatype,
+    loadArrayBuffer,
+    loadImage,
+    loadText,
+    CesiumMath,
+    Matrix2,
+    Matrix3,
+    Matrix4,
+    PrimitiveType,
+    Quaternion,
+    Queue,
+    RuntimeError,
+    throttleRequestByServer,
+    BufferUsage,
+    DrawCommand,
+    ShaderSource,
+    TextureMinificationFilter,
+    TextureWrap,
+    gltfDefaults,
+    Uri,
+    getModelAccessor,
+    ModelAnimationCache,
+    ModelAnimationCollection,
+    ModelMaterial,
+    ModelMesh,
+    ModelNode,
+    Pass,
+    SceneMode) {
     "use strict";
     /*global WebGLRenderingContext*/
 
@@ -116,14 +120,14 @@ define([
 
     LoadResources.prototype.finishedPendingLoads = function() {
         return ((this.pendingBufferLoads === 0) &&
-                (this.pendingShaderLoads === 0) &&
-                (this.pendingTextureLoads === 0));
+        (this.pendingShaderLoads === 0) &&
+        (this.pendingTextureLoads === 0));
     };
 
     LoadResources.prototype.finishedResourceCreation = function() {
         return ((this.buffersToCreate.length === 0) &&
-                (this.programsToCreate.length === 0) &&
-                (this.texturesToCreate.length === 0));
+        (this.programsToCreate.length === 0) &&
+        (this.texturesToCreate.length === 0));
     };
 
     LoadResources.prototype.finishedBuffersCreation = function() {
@@ -531,21 +535,48 @@ define([
         //>>includeEnd('debug');
 
         var url = options.url;
+
+        var model = new Model(options);
+
+        model.loadGltf(url, options);
+
+        return model;
+    };
+
+    Model.prototype.loadGltf = function(url, options) {
+        //>>includeStart('debug', pragmas.debug);
+        if (!defined(options) || !defined(url)) {
+            throw new DeveloperError('options.url is required');
+        }
+        //>>includeEnd('debug');
         var basePath = '';
         var i = url.lastIndexOf('/');
         if (i !== -1) {
             basePath = url.substring(0, i + 1);
         }
 
-        options = clone(options);
-        options.basePath = basePath;
-        var model = new Model(options);
+        this._basePath = basePath;
+        var docUri = new Uri(document.location.href);
+        var modelUri = new Uri(this._basePath);
+        this._baseUri = modelUri.resolve(docUri);
 
-        loadText(url, options.headers).then(function(data) {
-            model._gltf = gltfDefaults(JSON.parse(data));
-        }).otherwise(getFailedLoadFunction(model, 'gltf', url));
+        var promise;
 
-        return model;
+        var throttleRequests = defaultValue(options.throttleRequests, true);
+        if (throttleRequests) {
+            promise = throttleRequestByServer(loadText, url, {headers:options.headers});
+            if (!defined(promise)) {
+                return undefined;
+            }
+        } else {
+            promise = loadText(url, {headers:options.headers});
+        }
+
+        var that = this;
+
+        return when(promise, function(data) {
+            that._gltf = gltfDefaults(JSON.parse(data));
+        }).otherwise(getFailedLoadFunction(that, 'gltf', url));
     };
 
     function getRuntime(model, runtimeName, name) {
@@ -704,7 +735,7 @@ define([
             var loadResources = model._loadResources;
             loadResources.buffers[name] = arrayBuffer;
             --loadResources.pendingBufferLoads;
-         };
+        };
     }
 
     function parseBuffers(model) {
@@ -734,22 +765,27 @@ define([
             var loadResources = model._loadResources;
             loadResources.shaders[name] = source;
             --loadResources.pendingShaderLoads;
-         };
+        };
     }
 
     function parseShaders(model) {
         var shaders = model.gltf.shaders;
         if (!Cesium.defined(model._shaderParser) || !model._shaderParser(shaders)) {
-        for (var name in shaders) {
-            if (shaders.hasOwnProperty(name)) {
-                ++model._loadResources.pendingShaderLoads;
-                var shader = shaders[name];
-                var uri = new Uri(shader.uri);
-                var shaderPath = uri.resolve(model._baseUri).toString();
-                loadText(shaderPath).then(shaderLoad(model, name)).otherwise(getFailedLoadFunction(model, 'shader', shaderPath));
+            for (var name in shaders) {
+                if (shaders.hasOwnProperty(name)) {
+                    ++model._loadResources.pendingShaderLoads;
+                    var shader = shaders[name];
+                    var shaderSource;
+                    if (model.shaderOverride && (shaderSource = model.shaderOverride(shader, name, model.gltf))){
+                        shaderLoad(model, name)(shaderSource);
+                    }else {
+                        var uri = new Uri(shader.uri);
+                        var shaderPath = uri.resolve(model._baseUri).toString();
+                        loadText(shaderPath).then(shaderLoad(model, name)).otherwise(getFailedLoadFunction(model, 'shader', shaderPath));
+                    }
+                }
             }
         }
-    }
     }
 
     function parsePrograms(model) {
@@ -766,10 +802,10 @@ define([
             var loadResources = model._loadResources;
             --loadResources.pendingTextureLoads;
             loadResources.texturesToCreate.enqueue({
-                 name : name,
-                 image : image
-             });
-         };
+                name : name,
+                image : image
+            });
+        };
     }
 
     function parseTextures(model) {
@@ -1256,11 +1292,11 @@ define([
     function getChannelEvaluator(model, runtimeNode, targetPath, spline) {
         return function(localAnimationTime) {
 //  Workaround for https://github.com/KhronosGroup/glTF/issues/219
-/*
-            if (targetPath === 'translation') {
-                return;
-            }
-*/
+            /*
+             if (targetPath === 'translation') {
+             return;
+             }
+             */
             runtimeNode[targetPath] = spline.evaluate(localAnimationTime, runtimeNode[targetPath]);
             runtimeNode.dirtyNumber = model._maxDirtyNumber;
         };
@@ -1286,49 +1322,49 @@ define([
         var accessors = model.gltf.accessors;
         var name;
 
-         for (var animationName in animations) {
-             if (animations.hasOwnProperty(animationName)) {
-                 var animation = animations[animationName];
-                 var channels = animation.channels;
-                 var parameters = animation.parameters;
-                 var samplers = animation.samplers;
+        for (var animationName in animations) {
+            if (animations.hasOwnProperty(animationName)) {
+                var animation = animations[animationName];
+                var channels = animation.channels;
+                var parameters = animation.parameters;
+                var samplers = animation.samplers;
 
-                 var parameterValues = {};
+                var parameterValues = {};
 
-                 for (name in parameters) {
-                     if (parameters.hasOwnProperty(name)) {
-                         parameterValues[name] = ModelAnimationCache.getAnimationParameterValues(model, accessors[parameters[name]]);
-                     }
-                 }
+                for (name in parameters) {
+                    if (parameters.hasOwnProperty(name)) {
+                        parameterValues[name] = ModelAnimationCache.getAnimationParameterValues(model, accessors[parameters[name]]);
+                    }
+                }
 
-                 // Find start and stop time for the entire animation
-                 var startTime = Number.MAX_VALUE;
-                 var stopTime = -Number.MAX_VALUE;
+                // Find start and stop time for the entire animation
+                var startTime = Number.MAX_VALUE;
+                var stopTime = -Number.MAX_VALUE;
 
-                 var length = channels.length;
-                 var channelEvaluators = new Array(length);
+                var length = channels.length;
+                var channelEvaluators = new Array(length);
 
-                 for (var i = 0; i < length; ++i) {
-                     var channel = channels[i];
-                     var target = channel.target;
-                     var sampler = samplers[channel.sampler];
-                     var times = parameterValues[sampler.input];
+                for (var i = 0; i < length; ++i) {
+                    var channel = channels[i];
+                    var target = channel.target;
+                    var sampler = samplers[channel.sampler];
+                    var times = parameterValues[sampler.input];
 
-                     startTime = Math.min(startTime, times[0]);
-                     stopTime = Math.max(stopTime, times[times.length - 1]);
+                    startTime = Math.min(startTime, times[0]);
+                    stopTime = Math.max(stopTime, times[times.length - 1]);
 
-                     var spline = ModelAnimationCache.getAnimationSpline(model, animationName, animation, channel.sampler, sampler, parameterValues);
-                     // GLTF_SPEC: Support more targets like materials. https://github.com/KhronosGroup/glTF/issues/142
-                     channelEvaluators[i] = getChannelEvaluator(model, runtimeNodes[target.id], target.path, spline);
-                 }
+                    var spline = ModelAnimationCache.getAnimationSpline(model, animationName, animation, channel.sampler, sampler, parameterValues);
+                    // GLTF_SPEC: Support more targets like materials. https://github.com/KhronosGroup/glTF/issues/142
+                    channelEvaluators[i] = getChannelEvaluator(model, runtimeNodes[target.id], target.path, spline);
+                }
 
-                 model._runtime.animations[animationName] = {
-                     startTime : startTime,
-                     stopTime : stopTime,
-                     channelEvaluators : channelEvaluators
-                 };
-             }
-         }
+                model._runtime.animations[animationName] = {
+                    startTime : startTime,
+                    stopTime : stopTime,
+                    channelEvaluators : channelEvaluators
+                };
+            }
+        }
     }
 
     function createVertexArrays(model, context) {
