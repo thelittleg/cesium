@@ -1,8 +1,10 @@
 /*global define*/
 define([
-        './loadWithXhr'
+        './loadWithXhr',
+        './defined'
     ], function(
-        loadWithXhr) {
+        loadWithXhr,
+        defined) {
     "use strict";
 
     /**
@@ -33,7 +35,7 @@ define([
         return loadWithXhr({
             url : url,
             responseType : 'blob',
-            headers :  defined(options)?option.headers:undefined,
+            headers :  defined(options)?options.headers:undefined,
             withCredentials: defined(options)?options.withCredentials:undefined
         });
     }
