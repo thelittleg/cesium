@@ -3394,6 +3394,38 @@ define([
 
         releaseCachedGltf(this);
 
+        releaseCachedGltf(this);
+
+        releaseCachedGltf(this);
+
+        releaseCachedGltf(this);
+
+        releaseCachedGltf(this);
+
+        releaseCachedGltf(this);
+
+        releaseCachedGltf(this);
+
+        releaseCachedGltf(this);
+
+        releaseCachedGltf(this);
+
+        releaseCachedGltf(this);
+
+        releaseCachedGltf(this);
+
+        releaseCachedGltf(this);
+
+        releaseCachedGltf(this);
+
+        releaseCachedGltf(this);
+
+        releaseCachedGltf(this);
+
+        releaseCachedGltf(this);
+
+        releaseCachedGltf(this);
+
         return destroyObject(this);
     };
 
