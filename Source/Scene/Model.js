@@ -326,7 +326,10 @@ define([
         this._loadResources = undefined;
 
         //THELITTLEG
-        this._failedLoadFunction = defaultValue(options.failedLoadFunction, function(model, type, path){return new RuntimeError('Failed to load external ' + type + ': ' + path)});
+        this._failedLoadFunction = defaultValue(options.failedLoadFunction,
+                                                function(model, type, path){
+                                                    return new RuntimeError('Failed to load external ' + type + ': ' + path)
+                                                });
         this._cache = options.cache;
 
         this._cesiumAnimationsDirty = false;       // true when the Cesium API, not a glTF animation, changed a node transform
@@ -576,6 +579,9 @@ define([
 
         return when(promise, function(data) {
             that._gltf = gltfDefaults(JSON.parse(data));
+            if (defined(options.gltfModifier)) {
+                that._gltf = options.gltfModifier(that._gltf);
+            }
         }).otherwise(getFailedLoadFunction(that, 'gltf', url));
     };
 
@@ -770,7 +776,7 @@ define([
 
     function parseShaders(model) {
         var shaders = model.gltf.shaders;
-        if (!Cesium.defined(model._shaderParser) || !model._shaderParser(shaders)) {
+        if (!defined(model._shaderParser) || !model._shaderParser(shaders)) {
         for (var name in shaders) {
             if (shaders.hasOwnProperty(name)) {
                 ++model._loadResources.pendingShaderLoads;
@@ -811,12 +817,12 @@ define([
     function parseTextures(model) {
         var images = model.gltf.images;
         var textures = model.gltf.textures;
+        var textureCached;
         for (var name in textures) {
             if (textures.hasOwnProperty(name)) {
                 var texture = textures[name];
                 var uri = new Uri(images[texture.source].uri);
                 var imagePath = uri.resolve(model._baseUri).toString();
-                var textureCached = undefined;
                 if (defined(model._cache)) {
                     textureCached = model._cache.get(imagePath);
                     if (defined(textureCached)) {
@@ -1169,7 +1175,6 @@ define([
         for (var name in attributes) {
             if (attributes.hasOwnProperty(name)) {
                 var parameter = parameters[attributes[name]];
-
                 attributeLocations[parameter.semantic] = programAttributeLocations[name].index;
             }
         }

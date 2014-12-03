@@ -5,6 +5,7 @@ define([
         '../../Core/defined',
         '../../Core/DeveloperError',
         '../../Core/EventHelper',
+        '../../Core/Event',
         '../../Core/ScreenSpaceEventType',
         '../../Core/wrapFunction',
         '../../DataSources/ConstantPositionProperty',
@@ -20,6 +21,7 @@ define([
         defined,
         DeveloperError,
         EventHelper,
+        Event,
         ScreenSpaceEventType,
         wrapFunction,
         ConstantPositionProperty,
@@ -75,6 +77,9 @@ define([
 
         var eventHelper = new EventHelper();
         var entityView;
+
+        var eventSelector = new Event();
+        viewer.eventSelector = eventSelector;
 
         function trackSelectedEntity() {
             viewer.trackedEntity = viewer.selectedEntity;
@@ -177,6 +182,9 @@ define([
 
         function pickAndSelectObject(e) {
             viewer.selectedEntity = pickEntity(e);
+            if (defined(viewer.selectedEntity)){
+                viewer.eventSelector.raiseEvent(viewer.selectedEntity);
+            }
         }
 
         // Subscribe to the home button beforeExecute event if it exists,
