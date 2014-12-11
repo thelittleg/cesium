@@ -567,12 +567,12 @@ define([
 
         var throttleRequests = defaultValue(options.throttleRequests, true);
         if (throttleRequests) {
-            promise = throttleRequestByServer(loadText, url, options.headers);
+            promise = throttleRequestByServer(loadText, url, options);
             if (!defined(promise)) {
                 return undefined;
             }
         } else {
-            promise = loadText(url, options.headers);
+            promise = loadText(url, options);
         }
 
         var that = this;
