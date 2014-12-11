@@ -181,10 +181,9 @@ define([
         }
 
         function pickAndSelectObject(e) {
+            var oldSelection = viewer.selectedEntity;
             viewer.selectedEntity = pickEntity(e);
-            if (defined(viewer.selectedEntity)){
-                viewer.eventSelector.raiseEvent(viewer.selectedEntity);
-            }
+            viewer.eventSelector.raiseEvent(viewer.selectedEntity, oldSelection);
         }
 
         // Subscribe to the home button beforeExecute event if it exists,
