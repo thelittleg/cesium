@@ -302,7 +302,10 @@ define([
         }
         //>>includeEnd('debug');
 
-        this._propertyNames.push(propertyName);
+        var index = this._propertyNames.indexOf(propertyName);
+        if (index > -1) {
+            this._propertyNames.splice(index, 1);
+        }
         delete this[propertyName];
     };
 
