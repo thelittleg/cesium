@@ -43,7 +43,7 @@ define([
      *     // images is an array containing all the loaded images
      * });
      */
-    var loadImage = function(url, allowCrossOrigin) {
+    var loadImage = function(url, allowCrossOrigin, useCredentials) {
         //>>includeStart('debug', pragmas.debug);
         if (!defined(url)) {
             throw new DeveloperError('url is required.');
@@ -56,13 +56,19 @@ define([
             var crossOrigin;
 
             // data URIs can't have allowCrossOrigin set.
-            if (dataUriRegex.test(url) || !allowCrossOrigin) {
-                crossOrigin = false;
-            } else {
-                crossOrigin = isCrossOriginUrl(url);
+            if (!dataUriRegex.test(url) && allowCrossOrigin) {
+                allowCrossOrigin = isCrossOriginUrl(url);
             }
 
             var deferred = when.defer();
+
+            if (allowCrossOrigin){
+                if (useCredentials) {
+                    crossOrigin = 'use-credentials';
+                }else{
+                    crossOrigin = '';
+                }
+            }
 
             loadImage.createImage(url, crossOrigin, deferred);
 
@@ -82,9 +88,7 @@ define([
             deferred.reject(e);
         };
 
-        if (crossOrigin) {
-            image.crossOrigin = '';
-        }
+        image.crossOrigin = crossOrigin;
 
         image.src = url;
     };
