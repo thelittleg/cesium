@@ -360,6 +360,8 @@ define([
         this._renderCommands = [];
         this._pickCommands = [];
         this._pickIds = [];
+
+        this._withCredentials = false;
     };
 
     defineProperties(Model.prototype, {
@@ -563,6 +565,8 @@ define([
         var modelUri = new Uri(this._basePath);
         this._baseUri = modelUri.resolve(docUri);
 
+        this._withCredentials = options.withCredentials;
+
         var promise;
 
         var throttleRequests = defaultValue(options.throttleRequests, true);
@@ -752,7 +756,7 @@ define([
                 var buffer = buffers[name];
                 var uri = new Uri(buffer.uri);
                 var bufferPath = uri.resolve(model._baseUri).toString();
-                loadArrayBuffer(bufferPath).then(bufferLoad(model, name)).otherwise(getFailedLoadFunction(model, 'buffer', bufferPath));
+                loadArrayBuffer(bufferPath, {withCredentials: model._withCredentials, headers: model._headers}).then(bufferLoad(model, name)).otherwise(getFailedLoadFunction(model, 'buffer', bufferPath));
             }
         }
     }
@@ -833,7 +837,12 @@ define([
 
                 if (!defined(textureCached)) {
                     ++model._loadResources.pendingTextureLoads;
-                    loadImage(imagePath).then(imageLoad(model, name)).otherwise(getFailedLoadFunction(model, 'image', imagePath));
+                    var allowCrossOrigin = true;
+                    var useCredentials = false;
+                    if (model._withCredentials) {
+                        useCredentials = true;
+                    }
+                    loadImage(imagePath, allowCrossOrigin, useCredentials).then(imageLoad(model, name)).otherwise(getFailedLoadFunction(model, 'image', imagePath));
                 }
             }
         }
