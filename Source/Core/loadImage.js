@@ -40,11 +40,11 @@ define([
      * when.all([loadImage('image1.png'), loadImage('image2.png')]).then(function(images) {
      *     // images is an array containing all the loaded images
      * });
-     * 
+     *
      * @see {@link http://www.w3.org/TR/cors/|Cross-Origin Resource Sharing}
      * @see {@link http://wiki.commonjs.org/wiki/Promises/A|CommonJS Promises/A}
      */
-    function loadImage(url, allowCrossOrigin) {
+    function loadImage(url, options) {
         //>>includeStart('debug', pragmas.debug);
         if (!defined(url)) {
             throw new DeveloperError('url is required.');
@@ -57,13 +57,19 @@ define([
             var crossOrigin;
 
             // data URIs can't have allowCrossOrigin set.
-            if (dataUriRegex.test(url) || !allowCrossOrigin) {
-                crossOrigin = false;
-            } else {
-                crossOrigin = isCrossOriginUrl(url);
+            if (!dataUriRegex.test(url) && allowCrossOrigin) {
+                allowCrossOrigin = isCrossOriginUrl(url);
             }
 
             var deferred = when.defer();
+
+            if (options.allowCrossOrigin){
+                if (options.useCredentials) {
+                    crossOrigin = 'use-credentials';
+                }else{
+                    crossOrigin = '';
+                }
+            }
 
             loadImage.createImage(url, crossOrigin, deferred);
 
@@ -83,9 +89,7 @@ define([
             deferred.reject(e);
         };
 
-        if (crossOrigin) {
-            image.crossOrigin = '';
-        }
+        image.crossOrigin = crossOrigin;
 
         image.src = url;
     };
