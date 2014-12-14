@@ -56,7 +56,7 @@ define([
             var crossOrigin;
 
             // data URIs can't have allowCrossOrigin set.
-            if (!dataUriRegex.test(url) && allowCrossOrigin) {
+            if (!dataUriRegex.test(url) && allowCrossOrigin && useCredentials !== true) {
                 allowCrossOrigin = isCrossOriginUrl(url);
             }
 
