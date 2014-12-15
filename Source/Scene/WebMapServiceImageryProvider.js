@@ -154,6 +154,8 @@ define([
         this._headers = options.headers;
         this._withCredentials = options.withCredentials;
 
+        this._viewParams = options.viewParams;
+
         this._rectangle = Rectangle.intersectWith(this._rectangle, this._tilingScheme.rectangle);
 
         var credit = options.credit;
@@ -584,6 +586,10 @@ define([
 
         if (!defined(queryOptions.height)) {
             queryOptions.height = imageryProvider._tileHeight;
+        }
+
+        if (!defined(queryOptions.params)) {
+            queryOptions.viewparams = imageryProvider._viewParams;
         }
 
         uri.query = objectToQuery(queryOptions);
