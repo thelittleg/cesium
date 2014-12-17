@@ -647,6 +647,10 @@ define([
             queryOptions.info_format = infoFormat;
         }
 
+        if (!defined(queryOptions.params)) {
+            queryOptions.viewparams = imageryProvider._viewParams;
+        }
+
         uri.query = objectToQuery(queryOptions);
 
         var url = uri.toString();
