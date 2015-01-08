@@ -45,7 +45,7 @@ define([
      * @alias PointVisualizer
      * @constructor
      *
-     * @param {Scene} scene The scene the primitives will be rendered in.
+     * @param {PrimitiveCollection} primitiveCollection The primitiveCollection the primitives will be added in.
      * @param {EntityCollection} entityCollection The entityCollection to visualize.
      */
     var PointVisualizer = function(primitiveCollection, entityCollection) {
