@@ -45,10 +45,10 @@ define([
      * @alias PointVisualizer
      * @constructor
      *
-     * @param {Scene} scene The scene the primitives will be rendered in.
+     * @param {PrimitiveCollection} primitiveCollection The primitiveCollection the primitives will be added in.
      * @param {EntityCollection} entityCollection The entityCollection to visualize.
      */
-    var PointVisualizer = function(scene, entityCollection) {
+    var PointVisualizer = function(primitiveCollection, entityCollection) {
         //>>includeStart('debug', pragmas.debug);
         if (!defined(scene)) {
             throw new DeveloperError('scene is required.');
@@ -60,7 +60,7 @@ define([
 
         entityCollection.collectionChanged.addEventListener(PointVisualizer.prototype._onCollectionChanged, this);
 
-        this._scene = scene;
+        this._primitiveCollection = primitiveCollection;
         this._unusedIndexes = [];
         this._entityCollection = entityCollection;
         this._billboardCollection = undefined;
@@ -107,7 +107,7 @@ define([
                 if (!defined(billboardCollection)) {
                     billboardCollection = new BillboardCollection();
                     this._billboardCollection = billboardCollection;
-                    this._scene.primitives.add(billboardCollection);
+                    this._primitiveCollection.add(billboardCollection);
                 }
 
                 var length = unusedIndexes.length;
@@ -183,7 +183,7 @@ define([
     PointVisualizer.prototype.destroy = function() {
         this._entityCollection.collectionChanged.removeEventListener(PointVisualizer.prototype._onCollectionChanged, this);
         if (defined(this._billboardCollection)) {
-            this._scene.primitives.remove(this._billboardCollection);
+            this._primitiveCollection.remove(this._billboardCollection);
         }
         return destroyObject(this);
     };
