@@ -53,8 +53,8 @@ define([
      */
     function PointVisualizer(scene, entityCollection) {
         //>>includeStart('debug', pragmas.debug);
-        if (!defined(scene)) {
-            throw new DeveloperError('scene is required.');
+        if (!defined(primitiveCollection)) {
+            throw new DeveloperError('primitiveCollection is required.');
         }
         if (!defined(entityCollection)) {
             throw new DeveloperError('entityCollection is required.');
