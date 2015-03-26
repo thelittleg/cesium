@@ -71,7 +71,7 @@ define([
      * @param {Entity} entity The entity containing the geometry to be visualized.
      * @param {Scene} scene The scene where visualization is taking place.
      */
-    var PolygonGeometryUpdater = function(entity, scene) {
+    var PolygonGeometryUpdater = function(entity, scene, propertyName) {
         //>>includeStart('debug', pragmas.debug);
         if (!defined(entity)) {
             throw new DeveloperError('entity is required');
@@ -83,6 +83,7 @@ define([
 
         this._entity = entity;
         this._scene = scene;
+        this._propertyName = defined(propertyName)?propertyName:"polygon";
         this._entitySubscription = entity.definitionChanged.addEventListener(PolygonGeometryUpdater.prototype._onEntityPropertyChanged, this);
         this._fillEnabled = false;
         this._isClosed = false;
@@ -96,7 +97,7 @@ define([
         this._outlineColorProperty = undefined;
         this._outlineWidth = 1.0;
         this._options = new GeometryOptions(entity);
-        this._onEntityPropertyChanged(entity, 'polygon', entity.polygon, undefined);
+        this._onEntityPropertyChanged(entity, this._propertyName, entity[this._propertyName], undefined);
     };
 
     defineProperties(PolygonGeometryUpdater, {
@@ -387,11 +388,11 @@ define([
     };
 
     PolygonGeometryUpdater.prototype._onEntityPropertyChanged = function(entity, propertyName, newValue, oldValue) {
-        if (!(propertyName === 'availability' || propertyName === 'polygon')) {
+        if (!(propertyName === 'availability' || propertyName === this._propertyName)) {
             return;
         }
 
-        var polygon = this._entity.polygon;
+        var polygon = entity[this._propertyName];
 
         if (!defined(polygon)) {
             if (this._fillEnabled || this._outlineEnabled) {
@@ -529,7 +530,7 @@ define([
         }
 
         var entity = geometryUpdater._entity;
-        var polygon = entity.polygon;
+        var polygon = entity[geometryUpdater._propertyName];
         var show = polygon.show;
 
         if (!entity.isAvailable(time) || (defined(show) && !show.getValue(time))) {

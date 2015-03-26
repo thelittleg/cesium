@@ -57,7 +57,7 @@ define([
      * @param {Scene} primitiveCollection The parent the primitives will be added in.
      * @param {EntityCollection} entityCollection The entityCollection to visualize.
      */
-    var BillboardVisualizer = function(primitiveCollection, entityCollection) {
+    var BillboardVisualizer = function(primitiveCollection, entityCollection, propertyName) {
         //>>includeStart('debug', pragmas.debug);
         if (!defined(primitiveCollection)) {
             throw new DeveloperError('primitiveCollection is required.');

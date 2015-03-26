@@ -81,7 +81,7 @@ define([
         this._entityCollection = entityCollection;
         this._items = new AssociativeArray();
 
-        this._propertyName = defined(propertyName)?propertyName:"_point";
+        this._propertyName = defined(propertyName)?propertyName:"_label";
 
         this._onCollectionChanged(entityCollection, entityCollection.entities, [], []);
     };

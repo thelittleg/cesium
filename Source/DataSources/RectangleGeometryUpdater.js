@@ -71,7 +71,7 @@ define([
      * @param {Entity} entity The entity containing the geometry to be visualized.
      * @param {Scene} scene The scene where visualization is taking place.
      */
-    var RectangleGeometryUpdater = function(entity, scene) {
+    var RectangleGeometryUpdater = function(entity, scene, propertyName) {
         //>>includeStart('debug', pragmas.debug);
         if (!defined(entity)) {
             throw new DeveloperError('entity is required');
@@ -83,6 +83,7 @@ define([
 
         this._entity = entity;
         this._scene = scene;
+        this._propertyName = defined(propertyName)?propertyName:'rectangle';
         this._entitySubscription = entity.definitionChanged.addEventListener(RectangleGeometryUpdater.prototype._onEntityPropertyChanged, this);
         this._fillEnabled = false;
         this._isClosed = false;
@@ -96,7 +97,7 @@ define([
         this._outlineColorProperty = undefined;
         this._outlineWidth = 1.0;
         this._options = new GeometryOptions(entity);
-        this._onEntityPropertyChanged(entity, 'rectangle', entity.rectangle, undefined);
+        this._onEntityPropertyChanged(entity, this._propertyName, entity[this._propertyName], undefined);
     };
 
     defineProperties(RectangleGeometryUpdater, {
@@ -387,11 +388,11 @@ define([
     };
 
     RectangleGeometryUpdater.prototype._onEntityPropertyChanged = function(entity, propertyName, newValue, oldValue) {
-        if (!(propertyName === 'availability' || propertyName === 'rectangle')) {
+        if (!(propertyName === 'availability' || propertyName === this._propertyName)) {
             return;
         }
 
-        var rectangle = this._entity.rectangle;
+        var rectangle = entity[this._propertyName];
 
         if (!defined(rectangle)) {
             if (this._fillEnabled || this._outlineEnabled) {
@@ -535,7 +536,7 @@ define([
         }
 
         var entity = geometryUpdater._entity;
-        var rectangle = entity.rectangle;
+        var rectangle = entity[geometryUpdater._propertyName];
         var show = rectangle.show;
 
         if (!entity.isAvailable(time) || (defined(show) && !show.getValue(time))) {
