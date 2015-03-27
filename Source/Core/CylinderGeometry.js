@@ -104,7 +104,6 @@ define([
         this._bottomRadius = bottomRadius;
         this._vertexFormat = VertexFormat.clone(vertexFormat);
         this._slices = slices;
-        this._offset = slices;
         this._workerName = 'createCylinderGeometry';
     }
 
