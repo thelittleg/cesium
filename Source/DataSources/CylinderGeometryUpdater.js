@@ -1,87 +1,84 @@
 /*global define*/
 define([
         '../Core/Cartesian3',
+        '../Core/Matrix4',
         '../Core/Color',
         '../Core/ColorGeometryInstanceAttribute',
+        '../Core/CylinderGeometry',
+        '../Core/CylinderOutlineGeometry',
         '../Core/defaultValue',
         '../Core/defined',
         '../Core/defineProperties',
         '../Core/destroyObject',
         '../Core/DeveloperError',
-        '../Core/EllipsoidGeometry',
-        '../Core/EllipsoidOutlineGeometry',
         '../Core/Event',
         '../Core/GeometryInstance',
         '../Core/Iso8601',
-        '../Core/Matrix3',
-        '../Core/Matrix4',
         '../Core/ShowGeometryInstanceAttribute',
         '../Scene/MaterialAppearance',
         '../Scene/PerInstanceColorAppearance',
         '../Scene/Primitive',
-        '../Scene/SceneMode',
+        '../Scene/VerticalOrigin',
         './ColorMaterialProperty',
         './ConstantProperty',
         './MaterialProperty',
         './Property'
     ], function(
         Cartesian3,
+        Matrix4,
         Color,
         ColorGeometryInstanceAttribute,
+        CylinderGeometry,
+        CylinderOutlineGeometry,
         defaultValue,
         defined,
         defineProperties,
         destroyObject,
         DeveloperError,
-        EllipsoidGeometry,
-        EllipsoidOutlineGeometry,
         Event,
         GeometryInstance,
         Iso8601,
-        Matrix3,
-        Matrix4,
         ShowGeometryInstanceAttribute,
         MaterialAppearance,
         PerInstanceColorAppearance,
         Primitive,
-        SceneMode,
+        VerticalOrigin,
         ColorMaterialProperty,
         ConstantProperty,
         MaterialProperty,
         Property) {
     "use strict";
 
-    var defaultMaterial = ColorMaterialProperty.fromColor(Color.WHITE);
+    var defaultMaterial = new ColorMaterialProperty(Color.WHITE);
     var defaultShow = new ConstantProperty(true);
     var defaultFill = new ConstantProperty(true);
     var defaultOutline = new ConstantProperty(false);
     var defaultOutlineColor = new ConstantProperty(Color.BLACK);
 
-    var positionScratch;
-    var orientationScratch;
-    var radiiScratch;
-    var matrix3Scratch;
-    var unitSphere = new Cartesian3(1, 1, 1);
+    var scratchColor = new Color();
 
     var GeometryOptions = function(entity) {
         this.id = entity;
         this.vertexFormat = undefined;
-        this.radii = undefined;
-        this.stackPartitions = undefined;
-        this.slicePartitions = undefined;
-        this.subdivisions = undefined;
+        this.length = undefined;
+        this.verticalOrigin = undefined;
+        this.offset = undefined;
+        this.topRadius = undefined;
+        this.bottomRadius = undefined;
+        this.slices = undefined;
+        this.numberOfVerticalLines = undefined;
     };
 
     /**
-     * A {@link GeometryUpdater} for ellipsoids.
+     * A {@link GeometryUpdater} for cylinders.
      * Clients do not normally create this class directly, but instead rely on {@link DataSourceDisplay}.
-     * @alias EllipsoidGeometryUpdater
+     * @alias CylinderGeometryUpdater
      * @constructor
      *
      * @param {Entity} entity The entity containing the geometry to be visualized.
      * @param {Scene} scene The scene where visualization is taking place.
      */
-    var EllipsoidGeometryUpdater = function(entity, scene, propertyName) {
+    var CylinderGeometryUpdater = function(entity, scene, propertyName) {
         //>>includeStart('debug', pragmas.debug);
         if (!defined(entity)) {
             throw new DeveloperError('entity is required');
@@ -91,16 +88,18 @@ define([
         }
         //>>includeEnd('debug');
 
-        this._scene = scene;
+        this._propertyName = defined(propertyName)?propertyName:"cylinder";
         this._entity = entity;
-        this._propertyName = defined(propertyName)?propertyName:"ellipsoid";
-        this._entitySubscription = entity.definitionChanged.addEventListener(EllipsoidGeometryUpdater.prototype._onEntityPropertyChanged, this);
+        this._scene = scene;
+        this._entitySubscription = entity.definitionChanged.addEventListener(CylinderGeometryUpdater.prototype._onEntityPropertyChanged, this);
         this._fillEnabled = false;
         this._dynamic = false;
         this._outlineEnabled = false;
         this._geometryChanged = new Event();
         this._showProperty = undefined;
         this._materialProperty = undefined;
+        this._verticalOriginProperty = undefined;
+        this._offsetProperty = undefined;
         this._hasConstantOutline = true;
         this._showOutlineProperty = undefined;
         this._outlineColorProperty = undefined;
@@ -109,10 +108,10 @@ define([
         this._onEntityPropertyChanged(entity, this._propertyName, entity[this._propertyName], undefined);
     };
 
-    defineProperties(EllipsoidGeometryUpdater, {
+    defineProperties(CylinderGeometryUpdater, {
         /**
          * Gets the type of Appearance to use for simple color-based geometry.
-         * @memberof EllipsoidGeometryUpdater
+         * @memberof CylinderGeometryUpdater
          * @type {Appearance}
          */
         perInstanceColorAppearanceType : {
@@ -120,7 +119,7 @@ define([
         },
         /**
          * Gets the type of Appearance to use for material-based geometry.
-         * @memberof EllipsoidGeometryUpdater
+         * @memberof CylinderGeometryUpdater
          * @type {Appearance}
          */
         materialAppearanceType : {
@@ -128,10 +127,10 @@ define([
         }
     });
 
-    defineProperties(EllipsoidGeometryUpdater.prototype, {
+    defineProperties(CylinderGeometryUpdater.prototype, {
         /**
          * Gets the entity associated with this geometry.
-         * @memberof EllipsoidGeometryUpdater.prototype
+         * @memberof CylinderGeometryUpdater.prototype
          *
          * @type {Entity}
          * @readonly
@@ -143,7 +142,7 @@ define([
         },
         /**
          * Gets a value indicating if the geometry has a fill component.
-         * @memberof EllipsoidGeometryUpdater.prototype
+         * @memberof CylinderGeometryUpdater.prototype
          *
          * @type {Boolean}
          * @readonly
@@ -155,7 +154,7 @@ define([
         },
         /**
          * Gets a value indicating if fill visibility varies with simulation time.
-         * @memberof EllipsoidGeometryUpdater.prototype
+         * @memberof CylinderGeometryUpdater.prototype
          *
          * @type {Boolean}
          * @readonly
@@ -170,7 +169,7 @@ define([
         },
         /**
          * Gets the material property used to fill the geometry.
-         * @memberof EllipsoidGeometryUpdater.prototype
+         * @memberof CylinderGeometryUpdater.prototype
          *
          * @type {MaterialProperty}
          * @readonly
@@ -182,7 +181,7 @@ define([
         },
         /**
          * Gets a value indicating if the geometry has an outline component.
-         * @memberof EllipsoidGeometryUpdater.prototype
+         * @memberof CylinderGeometryUpdater.prototype
          *
          * @type {Boolean}
          * @readonly
@@ -194,7 +193,7 @@ define([
         },
         /**
          * Gets a value indicating if outline visibility varies with simulation time.
-         * @memberof EllipsoidGeometryUpdater.prototype
+         * @memberof CylinderGeometryUpdater.prototype
          *
          * @type {Boolean}
          * @readonly
@@ -209,7 +208,7 @@ define([
         },
         /**
          * Gets the {@link Color} property for the geometry outline.
-         * @memberof EllipsoidGeometryUpdater.prototype
+         * @memberof CylinderGeometryUpdater.prototype
          *
          * @type {Property}
          * @readonly
@@ -222,7 +221,7 @@ define([
         /**
          * Gets the constant with of the geometry outline, in pixels.
          * This value is only valid if isDynamic is false.
-         * @memberof EllipsoidGeometryUpdater.prototype
+         * @memberof CylinderGeometryUpdater.prototype
          *
          * @type {Number}
          * @readonly
@@ -236,7 +235,7 @@ define([
          * Gets a value indicating if the geometry is time-varying.
          * If true, all visualization is delegated to the {@link DynamicGeometryUpdater}
          * returned by GeometryUpdater#createDynamicUpdater.
-         * @memberof EllipsoidGeometryUpdater.prototype
+         * @memberof CylinderGeometryUpdater.prototype
          *
          * @type {Boolean}
          * @readonly
@@ -249,7 +248,7 @@ define([
         /**
          * Gets a value indicating if the geometry is closed.
          * This property is only valid for static geometry.
-         * @memberof EllipsoidGeometryUpdater.prototype
+         * @memberof CylinderGeometryUpdater.prototype
          *
          * @type {Boolean}
          * @readonly
@@ -260,7 +259,7 @@ define([
         /**
          * Gets an event that is raised whenever the public properties
          * of this updater change.
-         * @memberof EllipsoidGeometryUpdater.prototype
+         * @memberof CylinderGeometryUpdater.prototype
          *
          * @type {Boolean}
          * @readonly
@@ -278,7 +277,7 @@ define([
      * @param {JulianDate} time The time for which to retrieve visibility.
      * @returns {Boolean} true if geometry is outlined at the provided time, false otherwise.
      */
-    EllipsoidGeometryUpdater.prototype.isOutlineVisible = function(time) {
+    CylinderGeometryUpdater.prototype.isOutlineVisible = function(time) {
         var entity = this._entity;
         return this._outlineEnabled && entity.isAvailable(time) && this._showProperty.getValue(time) && this._showOutlineProperty.getValue(time);
     };
@@ -289,7 +288,7 @@ define([
      * @param {JulianDate} time The time for which to retrieve visibility.
      * @returns {Boolean} true if geometry is filled at the provided time, false otherwise.
      */
-    EllipsoidGeometryUpdater.prototype.isFilled = function(time) {
+    CylinderGeometryUpdater.prototype.isFilled = function(time) {
         var entity = this._entity;
         return this._fillEnabled && entity.isAvailable(time) && this._showProperty.getValue(time) && this._fillProperty.getValue(time);
     };
@@ -302,7 +301,7 @@ define([
      *
      * @exception {DeveloperError} This instance does not represent a filled geometry.
      */
-    EllipsoidGeometryUpdater.prototype.createFillGeometryInstance = function(time) {
+    CylinderGeometryUpdater.prototype.createFillGeometryInstance = function(time) {
         //>>includeStart('debug', pragmas.debug);
         if (!defined(time)) {
             throw new DeveloperError('time is required.');
@@ -327,23 +326,35 @@ define([
             }
             color = ColorGeometryInstanceAttribute.fromColor(currentColor);
             attributes = {
-                show : show,
-                color : color
+                show: show,
+                color: color
             };
         } else {
             attributes = {
-                show : show
+                show: show
             };
         }
 
-        positionScratch = entity.position.getValue(Iso8601.MINIMUM_VALUE, positionScratch);
-        orientationScratch = entity.orientation.getValue(Iso8601.MINIMUM_VALUE, orientationScratch);
-        matrix3Scratch = Matrix3.fromQuaternion(orientationScratch, matrix3Scratch);
+        var offset = this._offsetProperty.getValue(time);
+        var verticalOrigin = this._verticalOriginProperty.getValue(time);
+
+        if (verticalOrigin === VerticalOrigin.BOTTOM) {
+            Cartesian3.add(offset, new Cartesian3(0, 0, this._options.length / 2.0), offset);
+        } else if (verticalOrigin === VerticalOrigin.TOP) {
+            Cartesian3.add(offset, new Cartesian3(0, 0, -(this._options.length / 2.0)), offset);
+        }
+
+        var modelMatrix = entity._getModelMatrix(Iso8601.MINIMUM_VALUE);
+        if (modelMatrix){
+            var offsetmatrix = new Matrix4();
+            Matrix4.fromTranslation(offset, offsetmatrix);
+            Matrix4.multiply(modelMatrix, offsetmatrix, modelMatrix);
+        }
 
         return new GeometryInstance({
             id : entity,
-            geometry : new EllipsoidGeometry(this._options),
-            modelMatrix : Matrix4.fromRotationTranslation(matrix3Scratch, positionScratch),
+            geometry : new CylinderGeometry(this._options),
+            modelMatrix : modelMatrix,
             attributes : attributes
         });
     };
@@ -356,7 +367,7 @@ define([
      *
      * @exception {DeveloperError} This instance does not represent an outlined geometry.
      */
-    EllipsoidGeometryUpdater.prototype.createOutlineGeometryInstance = function(time) {
+    CylinderGeometryUpdater.prototype.createOutlineGeometryInstance = function(time) {
         //>>includeStart('debug', pragmas.debug);
         if (!defined(time)) {
             throw new DeveloperError('time is required.');
@@ -369,18 +380,40 @@ define([
 
         var entity = this._entity;
         var isAvailable = entity.isAvailable(time);
+        var outlineColor = Property.getValueOrDefault(this._outlineColorProperty, time, Color.BLACK);
 
-        positionScratch = entity.position.getValue(Iso8601.MINIMUM_VALUE, positionScratch);
-        orientationScratch = entity.orientation.getValue(Iso8601.MINIMUM_VALUE, orientationScratch);
-        matrix3Scratch = Matrix3.fromQuaternion(orientationScratch, matrix3Scratch);
+        var offset = this._offsetProperty.getValue(time);
+        var verticalOrigin = this._verticalOriginProperty.getValue(time);
+
+        /*if(verticalOrigin === VerticalOrigin.BOTTOM) {
+            Cartesian3.add(offset,new Cartesian3(0,this._options.length/2.0,0), offset);
+        }else if(verticalOrigin === VerticalOrigin.TOP){
+            Cartesian3.add(offset,new Cartesian3(0,-(this._options.length/2.0,0)),offset);
+        }*/
+
+        var offset = this._offsetProperty.getValue(time);
+        var verticalOrigin = this._verticalOriginProperty.getValue(time);
+
+        if (verticalOrigin === VerticalOrigin.BOTTOM) {
+            Cartesian3.add(offset, new Cartesian3(0, 0, this._options.length / 2.0), offset);
+        } else if (verticalOrigin === VerticalOrigin.TOP) {
+            Cartesian3.add(offset, new Cartesian3(0, 0, -(this._options.length / 2.0)), offset);
+        }
+
+        var modelMatrix = entity._getModelMatrix(Iso8601.MINIMUM_VALUE);
+        if (modelMatrix){
+            var offsetmatrix = new Matrix4();
+            Matrix4.fromTranslation(offset, offsetmatrix);
+            Matrix4.multiply(modelMatrix, offsetmatrix, modelMatrix);
+        }
 
         return new GeometryInstance({
             id : entity,
-            geometry : new EllipsoidOutlineGeometry(this._options),
-            modelMatrix : Matrix4.fromRotationTranslation(matrix3Scratch, positionScratch),
+            geometry : new CylinderOutlineGeometry(this._options),
+            modelMatrix : modelMatrix,
             attributes : {
                 show : new ShowGeometryInstanceAttribute(isAvailable && this._showProperty.getValue(time) && this._showOutlineProperty.getValue(time)),
-                color : ColorGeometryInstanceAttribute.fromColor(isAvailable ? this._outlineColorProperty.getValue(time) : Color.BLACK)
+                color : ColorGeometryInstanceAttribute.fromColor(outlineColor)
             }
         });
     };
@@ -390,7 +423,7 @@ define([
      *
      * @returns {Boolean} True if this object was destroyed; otherwise, false.
      */
-    EllipsoidGeometryUpdater.prototype.isDestroyed = function() {
+    CylinderGeometryUpdater.prototype.isDestroyed = function() {
         return false;
     };
 
@@ -399,19 +432,19 @@ define([
      *
      * @exception {DeveloperError} This object was destroyed, i.e., destroy() was called.
      */
-    EllipsoidGeometryUpdater.prototype.destroy = function() {
+    CylinderGeometryUpdater.prototype.destroy = function() {
         this._entitySubscription();
         destroyObject(this);
     };
 
-    EllipsoidGeometryUpdater.prototype._onEntityPropertyChanged = function(entity, propertyName, newValue, oldValue) {
+    CylinderGeometryUpdater.prototype._onEntityPropertyChanged = function(entity, propertyName, newValue, oldValue) {
         if (!(propertyName === 'availability' || propertyName === 'position' || propertyName === 'orientation' || propertyName === this._propertyName)) {
             return;
         }
 
-        var ellipsoid = entity[propertyName];
+        var cylinder = entity[propertyName];
 
-        if (!defined(ellipsoid)) {
+        if (!defined(cylinder)) {
             if (this._fillEnabled || this._outlineEnabled) {
                 this._fillEnabled = false;
                 this._outlineEnabled = false;
@@ -420,10 +453,10 @@ define([
             return;
         }
 
-        var fillProperty = ellipsoid.fill;
+        var fillProperty = cylinder.fill;
         var fillEnabled = defined(fillProperty) && fillProperty.isConstant ? fillProperty.getValue(Iso8601.MINIMUM_VALUE) : true;
 
-        var outlineProperty = ellipsoid.outline;
+        var outlineProperty = cylinder.outline;
         var outlineEnabled = defined(outlineProperty);
         if (outlineEnabled && outlineProperty.isConstant) {
             outlineEnabled = outlineProperty.getValue(Iso8601.MINIMUM_VALUE);
@@ -438,13 +471,14 @@ define([
             return;
         }
 
-        var position = this._entity.position;
-        var orientation = this._entity.orientation;
-        var radii = ellipsoid.radii;
+        var position = entity.position;
+        var length = cylinder.length;
+        var topRadius = cylinder.topRadius;
+        var bottomRadius = cylinder.bottomRadius;
 
-        var show = ellipsoid.show;
+        var show = cylinder.show;
         if ((defined(show) && show.isConstant && !show.getValue(Iso8601.MINIMUM_VALUE)) || //
-            (!defined(position) || !defined(orientation) || !defined(radii))) {
+            (!defined(position) || !defined(length) || !defined(topRadius) || !defined(bottomRadius))) {
             if (this._fillEnabled || this._outlineEnabled) {
                 this._fillEnabled = false;
                 this._outlineEnabled = false;
@@ -453,28 +487,31 @@ define([
             return;
         }
 
-        var material = defaultValue(ellipsoid.material, defaultMaterial);
+        var material = defaultValue(cylinder.material, defaultMaterial);
         var isColorMaterial = material instanceof ColorMaterialProperty;
         this._materialProperty = material;
         this._fillProperty = defaultValue(fillProperty, defaultFill);
         this._showProperty = defaultValue(show, defaultShow);
-        this._showOutlineProperty = defaultValue(ellipsoid.outline, defaultOutline);
-        this._outlineColorProperty = outlineEnabled ? defaultValue(ellipsoid.outlineColor, defaultOutlineColor) : undefined;
+        this._showOutlineProperty = defaultValue(cylinder.outline, defaultOutline);
+        this._outlineColorProperty = outlineEnabled ? defaultValue(cylinder.outlineColor, defaultOutlineColor) : undefined;
+        this._offsetProperty = defaultValue(cylinder.offset, new ConstantProperty(new Cartesian3(0,0,0)));
+        this._verticalOriginProperty = defaultValue(cylinder.verticalOrigin, new ConstantProperty(VerticalOrigin.BOTTOM));
+
+        var slices = cylinder.slices;
+        var outlineWidth = cylinder.outlineWidth;
+        var numberOfVerticalLines = cylinder.numberOfVerticalLines;
+
         this._fillEnabled = fillEnabled;
         this._outlineEnabled = outlineEnabled;
 
-        var stackPartitions = ellipsoid.stackPartitions;
-        var slicePartitions = ellipsoid.slicePartitions;
-        var outlineWidth = ellipsoid.outlineWidth;
-        var subdivisions = ellipsoid.subdivisions;
-
         if (!position.isConstant || //
-            !orientation.isConstant || //
-            !radii.isConstant || //
-            !Property.isConstant(stackPartitions) || //
-            !Property.isConstant(slicePartitions) || //
+            !Property.isConstant(entity.orientation) || //
+            !length.isConstant || //
+            !topRadius.isConstant || //
+            !bottomRadius.isConstant || //
+            !Property.isConstant(slices) || //
             !Property.isConstant(outlineWidth) || //
-            !Property.isConstant(subdivisions)) {
+            !Property.isConstant(numberOfVerticalLines)) {
             if (!this._dynamic) {
                 this._dynamic = true;
                 this._geometryChanged.raiseEvent(this);
@@ -482,10 +519,11 @@ define([
         } else {
             var options = this._options;
             options.vertexFormat = isColorMaterial ? PerInstanceColorAppearance.VERTEX_FORMAT : MaterialAppearance.MaterialSupport.TEXTURED.vertexFormat;
-            options.radii = radii.getValue(Iso8601.MINIMUM_VALUE, options.radii);
-            options.stackPartitions = defined(stackPartitions) ? stackPartitions.getValue(Iso8601.MINIMUM_VALUE) : undefined;
-            options.slicePartitions = defined(slicePartitions) ? slicePartitions.getValue(Iso8601.MINIMUM_VALUE) : undefined;
-            options.subdivisions = defined(subdivisions) ? subdivisions.getValue(Iso8601.MINIMUM_VALUE) : undefined;
+            options.length = length.getValue(Iso8601.MINIMUM_VALUE);
+            options.topRadius = topRadius.getValue(Iso8601.MINIMUM_VALUE);
+            options.bottomRadius = bottomRadius.getValue(Iso8601.MINIMUM_VALUE);
+            options.slices = defined(slices) ? slices.getValue(Iso8601.MINIMUM_VALUE) : undefined;
+            options.numberOfVerticalLines = defined(numberOfVerticalLines) ? numberOfVerticalLines.getValue(Iso8601.MINIMUM_VALUE) : undefined;
             this._outlineWidth = defined(outlineWidth) ? outlineWidth.getValue(Iso8601.MINIMUM_VALUE) : 1.0;
             this._dynamic = false;
             this._geometryChanged.raiseEvent(this);
@@ -500,7 +538,7 @@ define([
      *
      * @exception {DeveloperError} This instance does not represent dynamic geometry.
      */
-    EllipsoidGeometryUpdater.prototype.createDynamicUpdater = function(primitives) {
+    CylinderGeometryUpdater.prototype.createDynamicUpdater = function(primitives) {
         //>>includeStart('debug', pragmas.debug);
         if (!this._dynamic) {
             throw new DeveloperError('This instance does not represent dynamic geometry.');
@@ -518,19 +556,11 @@ define([
      * @private
      */
     var DynamicGeometryUpdater = function(primitives, geometryUpdater) {
-        this._entity = geometryUpdater._entity;
-        this._scene = geometryUpdater._scene;
         this._primitives = primitives;
         this._primitive = undefined;
         this._outlinePrimitive = undefined;
         this._geometryUpdater = geometryUpdater;
         this._options = new GeometryOptions(geometryUpdater._entity);
-        this._modelMatrix = new Matrix4();
-        this._material = undefined;
-        this._attributes = undefined;
-        this._outlineAttributes = undefined;
-        this._lastSceneMode = undefined;
-        this._lastOutlineWidth = undefined;
     };
 
     DynamicGeometryUpdater.prototype.update = function(time) {
@@ -540,104 +570,70 @@ define([
         }
         //>>includeEnd('debug');
 
-        var entity = this._entity;
-        var ellipsoid = entity[geometryUpdater._propertyName];
-        var show = ellipsoid.show;
+        var primitives = this._primitives;
+        primitives.removeAndDestroy(this._primitive);
+        primitives.removeAndDestroy(this._outlinePrimitive);
+        this._primitive = undefined;
+        this._outlinePrimitive = undefined;
 
-        if (!entity.isAvailable(time) || (defined(show) && !show.getValue(time))) {
-            if (defined(this._primitive)) {
-                this._primitive.show = false;
-            }
-
-            if (defined(this._outlinePrimitive)) {
-                this._outlinePrimitive.show = false;
-            }
+        var geometryUpdater = this._geometryUpdater;
+        var entity = geometryUpdater._entity;
+        var cylinder = entity[geometryUpdater._propertyName];
+        if (!entity.isAvailable(time) || !Property.getValueOrDefault(cylinder.show, time, true)) {
             return;
         }
 
-        //Compute attributes and material.
-        var appearance;
-        var showFill = !defined(ellipsoid.fill) || ellipsoid.fill.getValue(time);
-        var showOutline = defined(ellipsoid.outline) && ellipsoid.outline.getValue(time);
-        var outlineColor = defined(ellipsoid.outlineColor) ? ellipsoid.outlineColor.getValue(time) : Color.BLACK;
-        var material = MaterialProperty.getValue(time, defaultValue(ellipsoid.material, defaultMaterial), this._material);
-        this._material = material;
-
-        // Check properties that could trigger a primitive rebuild.
-        var stackPartitionsProperty = ellipsoid.stackPartitions;
-        var slicePartitionsProperty = ellipsoid.slicePartitions;
-        var subdivisionsProperty = ellipsoid.subdivisions;
-        var outlineWidthProperty = ellipsoid.outlineWidth;
-        var stackPartitions = defined(stackPartitionsProperty) ? stackPartitionsProperty.getValue(time) : undefined;
-        var slicePartitions = defined(slicePartitionsProperty) ? slicePartitionsProperty.getValue(time) : undefined;
-        var subdivisions = defined(subdivisionsProperty) ? subdivisionsProperty.getValue(time) : undefined;
-        var outlineWidth = defined(outlineWidthProperty) ? outlineWidthProperty.getValue(time) : 1.0;
-
         var options = this._options;
+        var modelMatrix = entity._getModelMatrix(time);
 
-        //In 3D we use a fast path by modifying Primitive.modelMatrix instead of regenerating the primitive every frame.
-        //Once #1486 is fixed, we can use the fast path in all cases.
-        var sceneMode = this._scene.mode;
-        var in3D = sceneMode === SceneMode.SCENE3D;
+        var length = Property.getValueOrUndefined(cylinder.length, time);
+        var topRadius = Property.getValueOrUndefined(cylinder.topRadius, time);
+        var bottomRadius = Property.getValueOrUndefined(cylinder.bottomRadius, time);
+        if (!defined(modelMatrix) || !defined(length) || !defined(topRadius) || !defined(bottomRadius)) {
+            return;
+        }
 
-        var modelMatrix = this._modelMatrix;
-        var positionProperty = entity.position;
-        var orientationProperty = entity.orientation;
-        var radiiProperty = ellipsoid.radii;
-        positionScratch = positionProperty.getValue(time, positionScratch);
-        orientationScratch = orientationProperty.getValue(time, orientationScratch);
-        matrix3Scratch = Matrix3.fromQuaternion(orientationScratch, matrix3Scratch);
-        radiiScratch = radiiProperty.getValue(time, radiiScratch);
-        modelMatrix = Matrix4.fromRotationTranslation(matrix3Scratch, positionScratch, modelMatrix);
+        options.length = length;
+        options.topRadius = topRadius;
+        options.bottomRadius = bottomRadius;
+        options.slices = Property.getValueOrUndefined(cylinder.slices, time);
+        options.numberOfVerticalLines = Property.getValueOrUndefined(cylinder.numberOfVerticalLines, time);
 
-        //We only rebuild the primitive if something other than the radii has changed
-        //For the radii, we use unit sphere and then deform it with a scale matrix.
-        var rebuildPrimitives = !in3D || this._lastSceneMode !== sceneMode || !defined(this._primitive) || //
-                                options.stackPartitions !== stackPartitions || options.slicePartitions !== slicePartitions || //
-                                options.subdivisions !== subdivisions || this._lastOutlineWidth !== outlineWidth;
-
-        if (rebuildPrimitives) {
-            this._removePrimitives();
-            this._lastSceneMode = sceneMode;
-            this._lastOutlineWidth = outlineWidth;
-
-            options.stackPartitions = stackPartitions;
-            options.slicePartitions = slicePartitions;
-            options.subdivisions = subdivisions;
-            options.radii = in3D ? unitSphere : radiiScratch;
-
+        if (Property.getValueOrDefault(cylinder.fill, time, true)) {
+            var material = MaterialProperty.getValue(time, geometryUpdater.fillMaterialProperty, this._material);
             this._material = material;
-            material = this._material;
-            appearance = new MaterialAppearance({
+
+            var appearance = new MaterialAppearance({
                 material : material,
                 translucent : material.isTranslucent(),
                 closed : true
             });
             options.vertexFormat = appearance.vertexFormat;
 
-            this._primitive = new Primitive({
+            this._primitive = primitives.add(new Primitive({
                 geometryInstances : new GeometryInstance({
                     id : entity,
-                    geometry : new EllipsoidGeometry(options),
-                    modelMatrix : !in3D ? modelMatrix : undefined,
-                    attributes : {
-                        show : new ShowGeometryInstanceAttribute(showFill)
-                    }
+                    geometry : new CylinderGeometry(options),
+                    modelMatrix : modelMatrix
                 }),
                 appearance : appearance,
                 asynchronous : false
-            });
-            this._primitives.add(this._primitive);
+            }));
+        }
 
+        if (Property.getValueOrDefault(cylinder.outline, time, false)) {
             options.vertexFormat = PerInstanceColorAppearance.VERTEX_FORMAT;
+
+            var outlineColor = Property.getValueOrClonedDefault(cylinder.outlineColor, time, Color.BLACK, scratchColor);
+            var outlineWidth = Property.getValueOrDefault(cylinder.outlineWidth, time, 1.0);
             var translucent = outlineColor.alpha !== 1.0;
-            this._outlinePrimitive = new Primitive({
+
+            this._outlinePrimitive = primitives.add(new Primitive({
                 geometryInstances : new GeometryInstance({
                     id : entity,
-                    geometry : new EllipsoidOutlineGeometry(options),
-                    modelMatrix : !in3D ? modelMatrix : undefined,
+                    geometry : new CylinderOutlineGeometry(options),
+                    modelMatrix : modelMatrix,
                     attributes : {
-                        show : new ShowGeometryInstanceAttribute(showOutline),
                         color : ColorGeometryInstanceAttribute.fromColor(outlineColor)
                     }
                 }),
@@ -645,50 +641,11 @@ define([
                     flat : true,
                     translucent : translucent,
                     renderState : {
-                        depthTest : {
-                            enabled : !translucent
-                        },
-                        lineWidth : this._geometryUpdater._scene.clampLineWidth(outlineWidth)
+                        lineWidth : geometryUpdater._scene.clampLineWidth(outlineWidth)
                     }
                 }),
                 asynchronous : false
-            });
-            this._primitives.add(this._outlinePrimitive);
-        } else if (this._primitive.ready) {
-            //Update attributes only.
-            var primitive = this._primitive;
-            appearance = primitive.appearance;
-            appearance.material = material;
-
-            var attributes = this._attributes;
-            if (!defined(attributes)) {
-                attributes = primitive.getGeometryInstanceAttributes(entity);
-                this._attributes = attributes;
-            }
-            attributes.show = ShowGeometryInstanceAttribute.toValue(showFill, attributes.show);
-
-            var outlinePrimitive = this._outlinePrimitive;
-
-            var outlineAttributes = this._outlineAttributes;
-            if (!defined(outlineAttributes)) {
-                outlineAttributes = outlinePrimitive.getGeometryInstanceAttributes(entity);
-                this._outlineAttributes = outlineAttributes;
-            }
-            outlineAttributes.show = ShowGeometryInstanceAttribute.toValue(showOutline, outlineAttributes.show);
-            outlineAttributes.color = ColorGeometryInstanceAttribute.toValue(outlineColor, outlineAttributes.color);
-        }
-
-        if (in3D) {
-            //Since we are scaling a unit sphere, we can't let any of the values go to zero.
-            //Instead we clamp them to a small value.  To the naked eye, this produces the same results
-            //that you get passing EllipsoidGeometry a radii with a zero component.
-            radiiScratch.x = Math.max(radiiScratch.x, 0.001);
-            radiiScratch.y = Math.max(radiiScratch.y, 0.001);
-            radiiScratch.z = Math.max(radiiScratch.z, 0.001);
-
-            modelMatrix = Matrix4.multiplyByScale(modelMatrix, radiiScratch, modelMatrix);
-            this._primitive.modelMatrix = modelMatrix;
-            this._outlinePrimitive.modelMatrix = modelMatrix;
+            }));
         }
     };
 
@@ -696,20 +653,12 @@ define([
         return false;
     };
 
-    DynamicGeometryUpdater.prototype._removePrimitives = function() {
-        if (defined(this._primitive)) {
-            this._primitives.remove(this._primitive);
-        }
-
-        if (defined(this._outlinePrimitive)) {
-            this._primitives.remove(this._outlinePrimitive);
-        }
-    };
-
     DynamicGeometryUpdater.prototype.destroy = function() {
-        this._removePrimitives();
+        var primitives = this._primitives;
+        primitives.removeAndDestroy(this._primitive);
+        primitives.removeAndDestroy(this._outlinePrimitive);
         destroyObject(this);
     };
 
-    return EllipsoidGeometryUpdater;
+    return CylinderGeometryUpdater;
 });

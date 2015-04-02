@@ -67,7 +67,7 @@ define([
      * @param {Entity} entity The entity containing the geometry to be visualized.
      * @param {Scene} scene The scene where visualization is taking place.
      */
-    var WallGeometryUpdater = function(entity, scene) {
+    var WallGeometryUpdater = function(entity, scene, propertyName) {
         //>>includeStart('debug', pragmas.debug);
         if (!defined(entity)) {
             throw new DeveloperError('entity is required');
@@ -79,6 +79,7 @@ define([
 
         this._entity = entity;
         this._scene = scene;
+        this._propertyName = defined(propertyName)?propertyName:'wall';
         this._entitySubscription = entity.definitionChanged.addEventListener(WallGeometryUpdater.prototype._onEntityPropertyChanged, this);
         this._fillEnabled = false;
         this._dynamic = false;
@@ -91,7 +92,7 @@ define([
         this._outlineColorProperty = undefined;
         this._outlineWidth = 1.0;
         this._options = new GeometryOptions(entity);
-        this._onEntityPropertyChanged(entity, 'wall', entity.wall, undefined);
+        this._onEntityPropertyChanged(entity,  this._propertyName, entity[this._propertyName], undefined);
     };
 
     defineProperties(WallGeometryUpdater, {
@@ -382,11 +383,11 @@ define([
     };
 
     WallGeometryUpdater.prototype._onEntityPropertyChanged = function(entity, propertyName, newValue, oldValue) {
-        if (!(propertyName === 'availability' || propertyName === 'wall')) {
+        if (!(propertyName === 'availability' || propertyName === this._propertyName)) {
             return;
         }
 
-        var wall = this._entity.wall;
+        var wall = entity[this._propertyName];
 
         if (!defined(wall)) {
             if (this._fillEnabled || this._outlineEnabled) {
@@ -517,7 +518,7 @@ define([
         }
 
         var entity = geometryUpdater._entity;
-        var wall = entity.wall;
+        var wall = entity[geometryUpdater._propertyName];
         var show = wall.show;
 
         if (!entity.isAvailable(time) || (defined(show) && !show.getValue(time))) {

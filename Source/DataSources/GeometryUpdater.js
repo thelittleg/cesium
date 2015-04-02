@@ -25,7 +25,7 @@ define([
      * @see PolygonGeometryUpdater
      * @see PolylineGeometryUpdater
      */
-    var GeometryUpdater = function(entity, scene) {
+    var GeometryUpdater = function(entity, scene, propertyName) {
         DeveloperError.throwInstantiationError();
     };
 
