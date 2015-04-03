@@ -442,7 +442,7 @@ define([
             return;
         }
 
-        var cylinder = entity[propertyName];
+        var cylinder = entity[this._propertyName];
 
         if (!defined(cylinder)) {
             if (this._fillEnabled || this._outlineEnabled) {
@@ -571,8 +571,11 @@ define([
         //>>includeEnd('debug');
 
         var primitives = this._primitives;
-        primitives.removeAndDestroy(this._primitive);
-        primitives.removeAndDestroy(this._outlinePrimitive);
+
+        primitives.remove(this._primitive);
+
+        primitives.remove(this._outlinePrimitive);
+
         this._primitive = undefined;
         this._outlinePrimitive = undefined;
 
@@ -589,6 +592,8 @@ define([
         var length = Property.getValueOrUndefined(cylinder.length, time);
         var topRadius = Property.getValueOrUndefined(cylinder.topRadius, time);
         var bottomRadius = Property.getValueOrUndefined(cylinder.bottomRadius, time);
+        var offset = Property.getValueOrUndefined(cylinder.offset, time);
+        var verticalOrigin = Property.getValueOrUndefined(cylinder.verticalOrigin, time);
         if (!defined(modelMatrix) || !defined(length) || !defined(topRadius) || !defined(bottomRadius)) {
             return;
         }
@@ -598,6 +603,7 @@ define([
         options.bottomRadius = bottomRadius;
         options.slices = Property.getValueOrUndefined(cylinder.slices, time);
         options.numberOfVerticalLines = Property.getValueOrUndefined(cylinder.numberOfVerticalLines, time);
+        options.offset = offset;
 
         if (Property.getValueOrDefault(cylinder.fill, time, true)) {
             var material = MaterialProperty.getValue(time, geometryUpdater.fillMaterialProperty, this._material);
@@ -609,6 +615,20 @@ define([
                 closed : true
             });
             options.vertexFormat = appearance.vertexFormat;
+
+
+            if (verticalOrigin === VerticalOrigin.BOTTOM) {
+                Cartesian3.add(offset, new Cartesian3(0, 0, options.length / 2.0), offset);
+            } else if (verticalOrigin === VerticalOrigin.TOP) {
+                Cartesian3.add(offset, new Cartesian3(0, 0, -(options.length / 2.0)), offset);
+            }
+
+            var modelMatrix = entity._getModelMatrix(Iso8601.MINIMUM_VALUE);
+            if (modelMatrix){
+                var offsetmatrix = new Matrix4();
+                Matrix4.fromTranslation(offset, offsetmatrix);
+                Matrix4.multiply(modelMatrix, offsetmatrix, modelMatrix);
+            }
 
             this._primitive = primitives.add(new Primitive({
                 geometryInstances : new GeometryInstance({
@@ -655,8 +675,8 @@ define([
 
     DynamicGeometryUpdater.prototype.destroy = function() {
         var primitives = this._primitives;
-        primitives.removeAndDestroy(this._primitive);
-        primitives.removeAndDestroy(this._outlinePrimitive);
+        primitives.remove(this._primitive);
+        primitives.remove(this._outlinePrimitive);
         destroyObject(this);
     };
 
