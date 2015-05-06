@@ -88,12 +88,12 @@ define([
     DataSourceDisplay.defaultVisualizersCallback = function(scene, dataSource) {
         var entities = dataSource.entities;
         return [new BillboardVisualizer(scene.primitives, entities),
-                new GeometryVisualizer(EllipseGeometryUpdater, scene, entities),
-                new GeometryVisualizer(EllipsoidGeometryUpdater, scene, entities),
-                new GeometryVisualizer(PolygonGeometryUpdater, scene, entities),
-                new GeometryVisualizer(PolylineGeometryUpdater, scene, entities),
-                new GeometryVisualizer(RectangleGeometryUpdater, scene, entities),
-                new GeometryVisualizer(WallGeometryUpdater, scene, entities),
+                new GeometryVisualizer(EllipseGeometryUpdater, scene.primitives, scene, entities),
+                new GeometryVisualizer(EllipsoidGeometryUpdater, scene.primitives, scene, entities),
+                new GeometryVisualizer(PolygonGeometryUpdater, scene.primitives, scene, entities),
+                new GeometryVisualizer(PolylineGeometryUpdater, scene.primitives, scene, entities),
+                new GeometryVisualizer(RectangleGeometryUpdater, scene.primitives, scene, entities),
+                new GeometryVisualizer(WallGeometryUpdater, scene.primitives, scene, entities),
                 new LabelVisualizer(scene.primitives, entities),
                 new ModelVisualizer(scene, entities),
                 new PointVisualizer(scene.primitives, entities),
