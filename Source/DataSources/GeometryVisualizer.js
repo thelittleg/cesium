@@ -135,7 +135,6 @@ define([
         this._changedObjects = new AssociativeArray();
 
         this._outlineBatch = new StaticOutlineGeometryBatch(primitives, scene);
-        this._outlineBatch = new StaticOutlineGeometryBatch(primitives, undefined);
         this._closedColorBatch = new StaticGeometryColorBatch(primitives, type.perInstanceColorAppearanceType, true);
         this._closedMaterialBatch = new StaticGeometryPerMaterialBatch(primitives, type.materialAppearanceType, true);
         this._openColorBatch = new StaticGeometryColorBatch(primitives, type.perInstanceColorAppearanceType, false);
