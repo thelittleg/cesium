@@ -85,6 +85,9 @@ define([
      * // The globe must enable lighting to make use of the terrain's vertex normals
      * viewer.scene.globe.enableLighting = true;
      */
+
+    var optionsTilesLoader = {};
+
     var CesiumTerrainProvider = function CesiumTerrainProvider(options) {
         //>>includeStart('debug', pragmas.debug)
         if (!defined(options) || !defined(options.url)) {
@@ -105,6 +108,11 @@ define([
 
         this._heightmapStructure = undefined;
         this._hasWaterMask = false;
+        this._withCredentials = undefined;
+
+        if(defined(options.withCredentials))
+            optionsTilesLoader.withCredentials = options.withCredentials;
+
 
         /**
          * Boolean flag that indicates if the Terrain Server can provide vertex normals.
@@ -211,7 +219,7 @@ define([
         }
 
         function requestMetadata() {
-            var metadata = loadJson(metadataUrl);
+            var metadata = loadJson(metadataUrl, optionsTilesLoader);
             when(metadata, metadataSuccess, metadataFailure);
         }
 
@@ -244,8 +252,11 @@ define([
             Accept : 'application/vnd.quantized-mesh;extensions=vertexnormals,application/octet-stream;q=0.9,*/*;q=0.01'
     };
 
-    function loadTileVertexNormals(url) {
-        return loadArrayBuffer(url, {headers:requestHeadersVertexNormals});
+    function loadTileVertexNormals(url, options) {
+        if(!defined(options))
+            options = {};
+        optionsTilesLoader.headers = requestHeadersVertexNormals;
+        return loadArrayBuffer(url, options);
     }
 
     var requestHeadersDefault = {
@@ -253,8 +264,11 @@ define([
             Accept : 'application/vnd.quantized-mesh,application/octet-stream;q=0.9,*/*;q=0.01'
     };
 
-    function loadTile(url) {
-        return loadArrayBuffer(url, {headers:requestHeadersDefault});
+    function loadTile(url, options) {
+        if(!defined(options))
+            options = {};
+        options.headers = requestHeadersDefault;
+        return loadArrayBuffer(url, options);
     }
 
     function createHeightmapTerrainData(provider, buffer, level, x, y, tmsY) {
@@ -462,12 +476,12 @@ define([
 
         throttleRequests = defaultValue(throttleRequests, true);
         if (throttleRequests) {
-            promise = throttleRequestByServer(tileLoader, url);
+            promise = throttleRequestByServer(tileLoader, url, optionsTilesLoader);
             if (!defined(promise)) {
                 return undefined;
             }
         } else {
-            promise = tileLoader(url);
+            promise = tileLoader(url,optionsTilesLoader);
         }
 
         var that = this;
