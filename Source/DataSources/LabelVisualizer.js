@@ -63,7 +63,7 @@ define([
      * @param {PrimitiveCOllection} primitiveCollection The primitiveCollection the primitives will be added in.
      * @param {EntityCollection} entityCollection The entityCollection to visualize.
      */
-    var LabelVisualizer = function(primitiveCollection, entityCollection) {
+    var LabelVisualizer = function(primitiveCollection, entityCollection, propertyName) {
         //>>includeStart('debug', pragmas.debug);
         if (!defined(primitiveCollection)) {
             throw new DeveloperError('primitiveCollection is required.');
@@ -80,6 +80,8 @@ define([
         this._labelCollection = undefined;
         this._entityCollection = entityCollection;
         this._items = new AssociativeArray();
+
+        this._propertyName = defined(propertyName)?propertyName:"_label";
 
         this._onCollectionChanged(entityCollection, entityCollection.entities, [], []);
     };
@@ -100,10 +102,12 @@ define([
 
         var items = this._items.values;
         var unusedIndexes = this._unusedIndexes;
+
+        var propertyName = this._propertyName;
         for (var i = 0, len = items.length; i < len; i++) {
             var item = items[i];
             var entity = item.entity;
-            var labelGraphics = entity._label;
+            var labelGraphics = entity[propertyName];
             var text;
             var label = item.label;
             var show = entity.isAvailable(time) && Property.getValueOrDefault(labelGraphics._show, time, true);
@@ -185,17 +189,17 @@ define([
         var entity;
         var unusedIndexes = this._unusedIndexes;
         var items = this._items;
-
+        var propertyName = this._propertyName;
         for (i = added.length - 1; i > -1; i--) {
             entity = added[i];
-            if (defined(entity._label) && defined(entity._position)) {
+            if (defined(entity[propertyName]) && defined(entity._position)) {
                 items.set(entity.id, new EntityData(entity));
             }
         }
 
         for (i = changed.length - 1; i > -1; i--) {
             entity = changed[i];
-            if (defined(entity._label) && defined(entity._position)) {
+            if (defined(entity[propertyName]) && defined(entity._position)) {
                 if (!items.contains(entity.id)) {
                     items.set(entity.id, new EntityData(entity));
                 }

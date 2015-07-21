@@ -72,7 +72,7 @@ define([
      * @param {Entity} entity The entity containing the geometry to be visualized.
      * @param {Scene} scene The scene where visualization is taking place.
      */
-    var EllipseGeometryUpdater = function(entity, scene) {
+    var EllipseGeometryUpdater = function(entity, scene, propertyName) {
         //>>includeStart('debug', pragmas.debug);
         if (!defined(entity)) {
             throw new DeveloperError('entity is required');
@@ -84,6 +84,7 @@ define([
 
         this._entity = entity;
         this._scene = scene;
+        this._propertyName = defined(propertyName)?propertyName:"ellipse";
         this._entitySubscription = entity.definitionChanged.addEventListener(EllipseGeometryUpdater.prototype._onEntityPropertyChanged, this);
         this._fillEnabled = false;
         this._isClosed = false;
@@ -97,7 +98,7 @@ define([
         this._outlineColorProperty = undefined;
         this._outlineWidth = 1.0;
         this._options = new GeometryOptions(entity);
-        this._onEntityPropertyChanged(entity, 'ellipse', entity.ellipse, undefined);
+        this._onEntityPropertyChanged(entity, this._propertyName , entity[this._propertyName], undefined);
     };
 
     defineProperties(EllipseGeometryUpdater, {
@@ -388,11 +389,11 @@ define([
     };
 
     EllipseGeometryUpdater.prototype._onEntityPropertyChanged = function(entity, propertyName, newValue, oldValue) {
-        if (!(propertyName === 'availability' || propertyName === 'position' || propertyName === 'ellipse')) {
+        if (!(propertyName === 'availability' || propertyName === 'position' || propertyName === this._propertyName )) {
             return;
         }
 
-        var ellipse = this._entity.ellipse;
+        var ellipse = entity[propertyName];
 
         if (!defined(ellipse)) {
             if (this._fillEnabled || this._outlineEnabled) {
@@ -539,7 +540,7 @@ define([
         }
 
         var entity = geometryUpdater._entity;
-        var ellipse = entity.ellipse;
+        var ellipse = entity[geometryUpdater._propertyName];
         var show = ellipse.show;
 
         if (!entity.isAvailable(time) || (defined(show) && !show.getValue(time))) {

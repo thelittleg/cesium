@@ -69,7 +69,7 @@ define([
      * @param {Entity} entity The entity containing the geometry to be visualized.
      * @param {Scene} scene The scene where visualization is taking place.
      */
-    var PolylineGeometryUpdater = function(entity, scene) {
+    var PolylineGeometryUpdater = function(entity, scene, propertyName) {
         //>>includeStart('debug', pragmas.debug);
         if (!defined(entity)) {
             throw new DeveloperError('entity is required');
@@ -81,6 +81,7 @@ define([
 
         this._entity = entity;
         this._scene = scene;
+        this._propertyName = defined(propertyName)?propertyName:"polyline";
         this._entitySubscription = entity.definitionChanged.addEventListener(PolylineGeometryUpdater.prototype._onEntityPropertyChanged, this);
         this._fillEnabled = false;
         this._dynamic = false;
@@ -88,7 +89,7 @@ define([
         this._showProperty = undefined;
         this._materialProperty = undefined;
         this._options = new GeometryOptions(entity);
-        this._onEntityPropertyChanged(entity, 'polyline', entity.polyline, undefined);
+        this._onEntityPropertyChanged(entity, this._propertyName, entity[this._propertyName], undefined);
     };
 
     defineProperties(PolylineGeometryUpdater, {
@@ -332,11 +333,11 @@ define([
     };
 
     PolylineGeometryUpdater.prototype._onEntityPropertyChanged = function(entity, propertyName, newValue, oldValue) {
-        if (!(propertyName === 'availability' || propertyName === 'polyline')) {
+        if (!(propertyName === 'availability' || propertyName === this._propertyName)) {
             return;
         }
 
-        var polyline = this._entity.polyline;
+        var polyline = entity[this._propertyName];
 
         if (!defined(polyline)) {
             if (this._fillEnabled) {
@@ -445,7 +446,7 @@ define([
     DynamicGeometryUpdater.prototype.update = function(time) {
         var geometryUpdater = this._geometryUpdater;
         var entity = geometryUpdater._entity;
-        var polyline = entity.polyline;
+        var polyline = entity[geometryUpdater._propertyName];
         var primitive = this._line;
 
         var show = entity.isAvailable(time) && Property.getValueOrDefault(polyline._show, time, true);
