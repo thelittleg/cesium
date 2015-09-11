@@ -41,6 +41,8 @@ define([
         this._eyeOffsetSubscription = undefined;
         this._pixelOffset = undefined;
         this._pixelOffsetSubscription = undefined;
+        this._positionOffset = undefined;
+        this._positionOffsetSubscription = undefined;
         this._scale = undefined;
         this._scaleSubscription = undefined;
         this._show = undefined;
@@ -137,6 +139,13 @@ define([
         pixelOffset : createPropertyDescriptor('pixelOffset'),
 
         /**
+         * Gets or sets the {@link Cartesian2} {@link Property} specifying the label's offset to add to the entity position.
+         * @memberof LabelGraphics.prototype
+         * @type {Property}
+         */
+        positionOffset : createPropertyDescriptor('positionOffset'),
+
+        /**
          * Gets or sets the numeric {@link Property} specifying the label's scale.
          * @memberof LabelGraphics.prototype
          * @type {Property}
@@ -190,6 +199,7 @@ define([
         result.verticalOrigin = this.verticalOrigin;
         result.eyeOffset = this.eyeOffset;
         result.pixelOffset = this.pixelOffset;
+        result.positionOffset = this.positionOffset;
         result.translucencyByDistance = this._translucencyByDistance;
         result.pixelOffsetScaleByDistance = this._pixelOffsetScaleByDistance;
         return result;
@@ -220,6 +230,7 @@ define([
         this.verticalOrigin = defaultValue(this.verticalOrigin, source.verticalOrigin);
         this.eyeOffset = defaultValue(this.eyeOffset, source.eyeOffset);
         this.pixelOffset = defaultValue(this.pixelOffset, source.pixelOffset);
+        this.positionOffset = defaultValue(this.positionOffset, source.positionOffset);
         this.translucencyByDistance = defaultValue(this._translucencyByDistance, source._translucencyByDistance);
         this.pixelOffsetScaleByDistance = defaultValue(this._pixelOffsetScaleByDistance, source._pixelOffsetScaleByDistance);
     };
