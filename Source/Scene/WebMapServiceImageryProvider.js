@@ -132,6 +132,7 @@ define([
         //>>includeEnd('debug');
 
         this._url = options.url;
+        this._id = options.id;
         this._tileDiscardPolicy = options.tileDiscardPolicy;
         this._proxy = options.proxy;
         this._layers = options.layers;
@@ -505,7 +506,7 @@ define([
 
             // THELITTLEG
             return when(loadJson(url, {headers: that._headers, withCredentials: this._withCredentials}), function(json) {
-                return geoJsonToFeatureInfo(json);
+                return geoJsonToFeatureInfo(json, that._id);
             }, function(e) {
                 // GeoJSON failed, try XML.
                 if (!that._getFeatureInfoAsXml) {
@@ -663,7 +664,7 @@ define([
         return url;
     }
 
-    function geoJsonToFeatureInfo(json) {
+    function geoJsonToFeatureInfo(json, id) {
         var result = [];
 
         var features = json.features;
@@ -681,6 +682,8 @@ define([
                 var latitude = feature.geometry.coordinates[1];
                 featureInfo.position = Cartographic.fromDegrees(longitude, latitude);
             }
+
+            featureInfo.data.layerId = id;
 
             result.push(featureInfo);
         }

@@ -81,7 +81,7 @@ define([
         }, ScreenSpaceEventType.PINCH_END, modifier);
 
         aggregator._eventHandler.setInputAction(function(mouseMovement) {
-            if (isDown[key]) {
+            if (isDown[key] && canvas.clientWidth>0 && canvas.clientHeight>0) {
                 // Aggregate several input events into a single animation frame.
                 if (!update[key]) {
                     Cartesian2.clone(mouseMovement.distance.endPosition, movement.distance.endPosition);
