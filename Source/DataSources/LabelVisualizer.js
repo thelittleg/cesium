@@ -7,6 +7,8 @@ define([
         '../Core/defined',
         '../Core/destroyObject',
         '../Core/DeveloperError',
+        '../Core/Iso8601',
+        '../Core/Matrix4',
         '../Core/NearFarScalar',
         '../Scene/HorizontalOrigin',
         '../Scene/LabelCollection',
@@ -21,6 +23,8 @@ define([
         defined,
         destroyObject,
         DeveloperError,
+        Iso8601,
+        Matrix4,
         NearFarScalar,
         HorizontalOrigin,
         LabelCollection,
@@ -45,6 +49,7 @@ define([
     var outlineColor = new Color();
     var eyeOffset = new Cartesian3();
     var pixelOffset = new Cartesian2();
+    var positionOffset = new Cartesian3();
     var translucencyByDistance = new NearFarScalar();
     var pixelOffsetScaleByDistance = new NearFarScalar();
 
@@ -112,11 +117,28 @@ define([
             var label = item.label;
             var show = entity.isAvailable(time) && Property.getValueOrDefault(labelGraphics._show, time, true);
 
+
             if (show) {
+                console.log("positionOffset");
+
                 position = Property.getValueOrUndefined(entity._position, time, position);
+                positionOffset = Property.getValueOrUndefined(labelGraphics._positionOffset, time);
+
+                var modelMatrix = entity._getModelMatrix(Iso8601.MINIMUM_VALUE);
+                if (modelMatrix){
+                    var offsetmatrix = new Matrix4();
+                    Matrix4.fromTranslation(positionOffset, offsetmatrix);
+                    Matrix4.multiply(modelMatrix, offsetmatrix, modelMatrix);
+                }
+
+                var translation  = new Cartesian3();;
+                Matrix4.getTranslation(modelMatrix, position);
+                //Cartesian3.add(position, translation, position);
                 text = Property.getValueOrUndefined(labelGraphics._text, time);
                 show = defined(position) && defined(text);
             }
+
+
 
             if (!show) {
                 //don't bother creating or updating anything else
