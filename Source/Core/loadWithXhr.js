@@ -24,13 +24,14 @@ define([
      * @exports loadWithXhr
      *
      * @param {Object} options Object with the following properties:
-     * @param {String|Promise.<String>} options.url The URL of the data, or a promise for the URL.
+     * @param {String|Promise} options.url The URL of the data, or a promise for the URL.
      * @param {String} [options.responseType] The type of response.  This controls the type of item returned.
      * @param {String} [options.method='GET'] The HTTP method to use.
      * @param {String} [options.data] The data to send with the request, if any.
      * @param {Object} [options.headers] HTTP headers to send with the request, if any.
      * @param {String} [options.overrideMimeType] Overrides the MIME type returned by the server.
-     * @returns {Promise.<Object>} a promise that will resolve to the requested data when loaded.
+     * @param {String} [options.useCredentials] withCredentials parameter to send with the request.
+     * @returns {Promise} a promise that will resolve to the requested data when loaded.
      *
      *
      * @example
@@ -43,7 +44,7 @@ define([
      * }).otherwise(function(error) {
      *     // an error occurred
      * });
-     * 
+     *
      * @see loadArrayBuffer
      * @see loadBlob
      * @see loadJson
@@ -65,11 +66,12 @@ define([
         var data = options.data;
         var headers = options.headers;
         var overrideMimeType = options.overrideMimeType;
+        var withCredentials = options.withCredentials;
 
         return when(options.url, function(url) {
             var deferred = when.defer();
 
-            loadWithXhr.load(url, responseType, method, data, headers, deferred, overrideMimeType);
+            loadWithXhr.load(url, responseType, method, data, headers, deferred, overrideMimeType, withCredentials);
 
             return deferred.promise;
         });
@@ -123,7 +125,7 @@ define([
     }
 
     // This is broken out into a separate function so that it can be mocked for testing purposes.
-    loadWithXhr.load = function(url, responseType, method, data, headers, deferred, overrideMimeType) {
+    loadWithXhr.load = function(url, responseType, method, data, headers, deferred, overrideMimeType, withCredentials) {
         var dataUriRegexResult = dataUriRegex.exec(url);
         if (dataUriRegexResult !== null) {
             deferred.resolve(decodeDataUri(dataUriRegexResult, responseType));
@@ -148,6 +150,10 @@ define([
 
         if (defined(responseType)) {
             xhr.responseType = responseType;
+        }
+
+        if (defined(withCredentials)){
+            xhr.withCredentials = withCredentials;
         }
 
         xhr.onload = function() {

@@ -16,8 +16,8 @@ define([
      * @exports loadArrayBuffer
      *
      * @param {String|Promise.<String>} url The URL of the binary data, or a promise for the URL.
-     * @param {Object} [headers] HTTP headers to send with the requests.
-     * @returns {Promise.<ArrayBuffer>} a promise that will resolve to the requested data when loaded.
+     * @param {Object} [options] options to send with the requests.
+     * @returns {Promise} a promise that will resolve to the requested data when loaded.
      *
      *
      * @example

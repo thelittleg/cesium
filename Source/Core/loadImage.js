@@ -21,11 +21,12 @@ define([
      *
      * @exports loadImage
      *
-     * @param {String|Promise.<String>} url The source of the image, or a promise for the URL.
+     * @param {String|Promise} url The source of the image, or a promise for the URL.
+     * @param {Object} [options] options to send with the requests.
      * @param {Boolean} [allowCrossOrigin=true] Whether to request the image using Cross-Origin
      *        Resource Sharing (CORS).  CORS is only actually used if the image URL is actually cross-origin.
      *        Data URIs are never requested using CORS.
-     * @returns {Promise.<Image>} a promise that will resolve to the requested data when loaded.
+     * @returns {Promise} a promise that will resolve to the requested data when loaded.
      *
      *
      * @example
@@ -51,14 +52,14 @@ define([
         }
         //>>includeEnd('debug');
 
-        allowCrossOrigin = defaultValue(allowCrossOrigin, true);
+        options.allowCrossOrigin = defaultValue(options.allowCrossOrigin, true);
 
         return when(url, function(url) {
             var crossOrigin;
 
             // data URIs can't have allowCrossOrigin set.
-            if (!dataUriRegex.test(url) && allowCrossOrigin && useCredentials !== true) {
-                allowCrossOrigin = isCrossOriginUrl(url);
+            if (!dataUriRegex.test(url) && options.allowCrossOrigin && options.useCredentials !== true) {
+                options.allowCrossOrigin = isCrossOriginUrl(url);
             }
 
             var deferred = when.defer();

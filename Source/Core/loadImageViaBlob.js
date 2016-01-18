@@ -25,8 +25,8 @@ define([
      *
      * @exports loadImageViaBlob
      *
-     * @param {String|Promise.<String>} url The source of the image, or a promise for the URL.
-     * @returns {Promise.<Image>} a promise that will resolve to the requested data when loaded.
+     * @param {String|Promise} url The source of the image, or a promise for the URL.
+     * @returns {Promise} a promise that will resolve to the requested data when loaded.
      *
      *
      * @example
