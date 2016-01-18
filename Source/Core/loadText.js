@@ -15,9 +15,9 @@ define([
      *
      * @exports loadText
      *
-     * @param {String|Promise.<String>} url The URL to request, or a promise for the URL.
-     * @param {Object} [headers] HTTP headers to send with the request.
-     * @returns {Promise.<String>} a promise that will resolve to the requested data when loaded.
+     * @param {String|Promise} url The URL to request, or a promise for the URL.
+     * @param {Object} [options] options to send with the request.
+     * @returns {Promise} a promise that will resolve to the requested data when loaded.
      *
      *
      * @example

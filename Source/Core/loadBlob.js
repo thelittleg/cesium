@@ -16,7 +16,7 @@ define([
      * @exports loadBlob
      *
      * @param {String|Promise.<String>} url The URL of the data, or a promise for the URL.
-     * @param {Object} [headers] HTTP headers to send with the requests.
+     * @param {Object} [options] options to send with the requests.
      * @returns {Promise.<Blob>} a promise that will resolve to the requested data when loaded.
      *
      *
