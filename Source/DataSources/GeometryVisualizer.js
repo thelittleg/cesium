@@ -116,8 +116,8 @@ define([
         if (!defined(type)) {
             throw new DeveloperError('type is required.');
         }
-        if (!defined(primitiveCollection)) {
-            throw new DeveloperError('primitiveCollection is required.');
+        if (!defined(scene)) {
+            throw new DeveloperError('scene is required.');
         }
         if (!defined(entityCollection)) {
             throw new DeveloperError('entityCollection is required.');
@@ -125,8 +125,8 @@ define([
         //>>includeEnd('debug');
 
         this._type = type;
-        this._propertyName = defined(propertyName)?propertyName:undefined;
-        var primitives = defined(primitiveCollection)?primitiveCollection:scene.primitives;
+
+        var primitives = scene.primitives;
         this._scene = scene;
         this._primitives = primitives;
         this._entityCollection = undefined;
@@ -210,7 +210,7 @@ define([
         for (i = added.length - 1; i > -1; i--) {
             entity = added[i];
             id = entity.id;
-            updater = new this._type(entity, this._scene, this._propertyName);
+            updater = new this._type(entity, this._scene);
             this._updaters.set(id, updater);
             insertUpdaterIntoBatch(this, time, updater);
             this._subscriptions.set(id, updater.geometryChanged.addEventListener(GeometryVisualizer._onGeometryChanged, this));
