@@ -61,13 +61,13 @@ define([
      * @alias BillboardVisualizer
      * @constructor
      *
-     * @param {Scene} primitiveCollection The parent the primitives will be added in.
+     * @param {Scene} scene The scene the primitives will be rendered in.
      * @param {EntityCollection} entityCollection The entityCollection to visualize.
      */
     function BillboardVisualizer(scene, entityCollection) {
         //>>includeStart('debug', pragmas.debug);
-        if (!defined(primitiveCollection)) {
-            throw new DeveloperError('primitiveCollection is required.');
+        if (!defined(scene)) {
+            throw new DeveloperError('scene is required.');
         }
         if (!defined(entityCollection)) {
             throw new DeveloperError('entityCollection is required.');
@@ -76,7 +76,7 @@ define([
 
         entityCollection.collectionChanged.addEventListener(BillboardVisualizer.prototype._onCollectionChanged, this);
 
-        this._primitiveCollection = primitiveCollection;
+        this._scene = scene;
         this._unusedIndexes = [];
         this._billboardCollection = undefined;
         this._entityCollection = entityCollection;
@@ -125,7 +125,7 @@ define([
                 if (!defined(billboardCollection)) {
                     billboardCollection = new BillboardCollection();
                     this._billboardCollection = billboardCollection;
-                    this._primitiveCollection.add(billboardCollection);
+                    this._scene.primitives.add(billboardCollection);
                 }
 
                 var length = unusedIndexes.length;
@@ -215,7 +215,7 @@ define([
     BillboardVisualizer.prototype.destroy = function() {
         this._entityCollection.collectionChanged.removeEventListener(BillboardVisualizer.prototype._onCollectionChanged, this);
         if (defined(this._billboardCollection)) {
-            this._primitiveCollection.remove(this._billboardCollection);
+            this._scene.primitives.remove(this._billboardCollection);
         }
         return destroyObject(this);
     };
