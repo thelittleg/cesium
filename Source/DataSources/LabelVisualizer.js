@@ -62,13 +62,13 @@ define([
      * @alias LabelVisualizer
      * @constructor
      *
-     * @param {PrimitiveCOllection} primitiveCollection The primitiveCollection the primitives will be added in.
+     * @param {Scene} scene The scene the primitives will be rendered in.
      * @param {EntityCollection} entityCollection The entityCollection to visualize.
      */
     function LabelVisualizer(scene, entityCollection) {
         //>>includeStart('debug', pragmas.debug);
-        if (!defined(primitiveCollection)) {
-            throw new DeveloperError('primitiveCollection is required.');
+        if (!defined(scene)) {
+            throw new DeveloperError('scene is required.');
         }
         if (!defined(entityCollection)) {
             throw new DeveloperError('entityCollection is required.');
@@ -77,7 +77,7 @@ define([
 
         entityCollection.collectionChanged.addEventListener(LabelVisualizer.prototype._onCollectionChanged, this);
 
-        this._primitiveCollection = primitiveCollection;
+        this._scene = scene;
         this._unusedIndexes = [];
         this._labelCollection = undefined;
         this._entityCollection = entityCollection;
@@ -127,7 +127,7 @@ define([
                 if (!defined(labelCollection)) {
                     labelCollection = new LabelCollection();
                     this._labelCollection = labelCollection;
-                    this._primitiveCollection.add(labelCollection);
+                    this._scene.primitives.add(labelCollection);
                 }
 
                 var length = unusedIndexes.length;
@@ -208,7 +208,7 @@ define([
     LabelVisualizer.prototype.destroy = function() {
         this._entityCollection.collectionChanged.removeEventListener(LabelVisualizer.prototype._onCollectionChanged, this);
         if (defined(this._labelCollection)) {
-            this._primitiveCollection.remove(this._labelCollection);
+            this._scene.primitives.remove(this._labelCollection);
         }
         return destroyObject(this);
     };
