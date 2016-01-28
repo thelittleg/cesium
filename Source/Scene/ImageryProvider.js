@@ -307,12 +307,12 @@ define([
      */
     ImageryProvider.loadImage = function(imageryProvider, url) {
         if (defined(imageryProvider.tileDiscardPolicy)) {
-            // THELITTLEG
-            return throttleRequestByServer(loadImageViaBlob, url, {headers:imageryProvider.headers,
-                                            withCredentials: imageryProvider.withCredentials});
+            return throttleRequestByServer(url, loadImageViaBlob,
+                {   headers:imageryProvider.headers,
+                    withCredentials: imageryProvider.withCredentials
+                });
         }
-        // THELITTLEG
-        return throttleRequestByServer(loadImage, url);
+        return throttleRequestByServer(url, loadImage);
     };
 
     return ImageryProvider;
