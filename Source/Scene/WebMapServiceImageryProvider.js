@@ -29,7 +29,7 @@ define([
         UrlTemplateImageryProvider) {
     "use strict";
 
-/**
+    /**
      * Provides tiled imagery hosted by a Web Map Service (WMS) server.
      *
      * @alias WebMapServiceImageryProvider
@@ -179,7 +179,9 @@ define([
             tileDiscardPolicy : options.tileDiscardPolicy,
             credit : options.credit,
             getFeatureInfoFormats : getFeatureInfoFormats,
-            enablePickFeatures: options.enablePickFeatures
+            enablePickFeatures: options.enablePickFeatures,
+            withCredentials :  options.withCredentials,
+            headers :  options.headers
         });
     }
 
