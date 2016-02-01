@@ -189,6 +189,8 @@ define([
         this._rectangle = defaultValue(options.rectangle, this._tilingScheme.rectangle);
         this._rectangle = Rectangle.intersection(this._rectangle, this._tilingScheme.rectangle);
         this._hasAlphaChannel = defaultValue(options.hasAlphaChannel, true);
+        this._withCredentials = defaultValue(options.withCredentials, undefined);
+        this._headers = defaultValue(options.headers, undefined);
 
         /**
          * Gets or sets a value indicating whether feature picking is enabled.  If true, {@link UrlTemplateImageryProvider#pickFeatures} will
@@ -450,6 +452,31 @@ define([
             get : function() {
                 return this._hasAlphaChannel;
             }
+        },
+          /**
+         * Gets headers used by the imagery provider. value is undefined if no header is used.
+         * @memberof UrlTemplateImageryProvider.prototype
+         * @type {Object}
+         * @readonly
+         * @default undefined
+         */
+        headers : {
+            get: function(){
+                return this._headers;
+            }
+        },
+        /**
+         * Gets credentials used by the imagery provider. value is undefined if no
+         * credentials is used.
+         * @memberof UrlTemplateImageryProvider.prototype
+         * @type {String}
+         * @readonly
+         * @default undefined
+         */
+        withCredentials : {
+            get: function(){
+                return this._withCredentials;
+            }
         }
     });
 
@@ -520,17 +547,24 @@ define([
             var format = that._getFeatureInfoFormats[formatIndex];
             var url = buildPickFeaturesUrl(that, x, y, level, longitude, latitude, format.format);
 
+            var options = {
+                headers : this.headers,
+                withCredentials : this.withCredentials
+            };
+
             ++formatIndex;
 
             if (format.type === 'json') {
-                return loadJson(url).then(format.callback).otherwise(doRequest);
+                return loadJson(url, options).then(format.callback).otherwise(doRequest);
             } else if (format.type === 'xml') {
-                return loadXML(url).then(format.callback).otherwise(doRequest);
+                return loadXML(url, options).then(format.callback).otherwise(doRequest);
             } else if (format.type === 'text' || format.type === 'html') {
-                return loadText(url).then(format.callback).otherwise(doRequest);
+                return loadText(url, options).then(format.callback).otherwise(doRequest);
             } else {
                 return loadWithXhr({
                     url: url,
+                    headers : this.headers,
+                    withCredentials : this.withCredentials,
                     responseType: format.format
                 }).then(handleResponse.bind(undefined, format)).otherwise(doRequest);
             }
