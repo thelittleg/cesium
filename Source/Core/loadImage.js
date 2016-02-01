@@ -50,10 +50,9 @@ define([
         if (!defined(url)) {
             throw new DeveloperError('url is required.');
         }
-
-        options = defaultValue(options, defaultValue.EMPTY_OBJECT);
         //>>includeEnd('debug');
 
+        options = defaultValue(options, defaultValue.EMPTY_OBJECT);
         options.allowCrossOrigin = defaultValue(options.allowCrossOrigin, true);
 
         return when(url, function(url) {
