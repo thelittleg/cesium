@@ -54,7 +54,7 @@ define([
         return loadBlob(url, options).then(function(blob) {
             var blobUrl = window.URL.createObjectURL(blob);
 
-            return loadImage(blobUrl, false).then(function(image) {
+            return loadImage(blobUrl, {allowCrossOrigin : false}).then(function(image) {
                 image.blob = blob;
                 window.URL.revokeObjectURL(blobUrl);
                 return image;
