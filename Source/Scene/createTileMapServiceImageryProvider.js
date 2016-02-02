@@ -137,6 +137,7 @@ define([
             }
 
             var fileExtension = defaultValue(options.fileExtension, format.getAttribute('extension'));
+            var tileSchema = defaultValue(options.tileSchema, '{z}/{x}/{reverseY}');
             var tileWidth = defaultValue(options.tileWidth, parseInt(format.getAttribute('width'), 10));
             var tileHeight = defaultValue(options.tileHeight, parseInt(format.getAttribute('height'), 10));
             var minimumLevel = defaultValue(options.minimumLevel, parseInt(tilesetsList[0].getAttribute('order'), 10));
@@ -226,7 +227,10 @@ define([
                 minimumLevel = 0;
             }
 
-            var templateUrl = joinUrls(url, '{z}/{x}/{reverseY}.' + fileExtension);
+            var templateUrl = joinUrls(url, tileSchema);
+            if (fileExtension.length){
+                templateUrl = joinUrls(templateUrl, '.' + fileExtension);
+            }
 
             deferred.resolve({
                 url : templateUrl,
@@ -238,13 +242,16 @@ define([
                 maximumLevel : maximumLevel,
                 proxy : options.proxy,
                 tileDiscardPolicy : options.tileDiscardPolicy,
-                credit: options.credit
+                credit: options.credit,
+                pickFeaturesUrl: options.pickFeaturesUrl,
+                getFeatureInfoFormats: options.getFeatureInfoFormats
             });
         }
 
         function metadataFailure(error) {
             // Can't load XML, still allow options and defaults
             var fileExtension = defaultValue(options.fileExtension, 'png');
+            var tileSchema = defaultValue(options.tileSchema, '{z}/{x}/{reverseY}');
             var tileWidth = defaultValue(options.tileWidth, 256);
             var tileHeight = defaultValue(options.tileHeight, 256);
             var minimumLevel = defaultValue(options.minimumLevel, 0);
@@ -252,7 +259,10 @@ define([
             var tilingScheme = defined(options.tilingScheme) ? options.tilingScheme : new WebMercatorTilingScheme({ ellipsoid : options.ellipsoid });
             var rectangle = defaultValue(options.rectangle, tilingScheme.rectangle);
 
-            var templateUrl = joinUrls(url, '{z}/{x}/{reverseY}.' + fileExtension);
+            var templateUrl = joinUrls(url, tileSchema);
+            if (fileExtension.length){
+                templateUrl = joinUrls(templateUrl, '.' + fileExtension);
+            }
 
             deferred.resolve({
                 url : templateUrl,
@@ -264,7 +274,9 @@ define([
                 maximumLevel : maximumLevel,
                 proxy : options.proxy,
                 tileDiscardPolicy : options.tileDiscardPolicy,
-                credit: options.credit
+                credit: options.credit,
+                pickFeaturesUrl: options.pickFeaturesUrl,
+                getFeatureInfoFormats: options.getFeatureInfoFormats
             });
         }
 
