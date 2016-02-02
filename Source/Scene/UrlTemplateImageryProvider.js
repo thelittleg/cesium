@@ -649,8 +649,8 @@ define([
             var url = buildPickFeaturesUrl(that, x, y, level, longitude, latitude, format.format);
 
             var options = {
-                headers : this.headers,
-                withCredentials : this.withCredentials
+                headers : that.headers,
+                withCredentials : that.withCredentials
             };
 
             ++formatIndex;
