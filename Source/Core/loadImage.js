@@ -53,20 +53,21 @@ define([
         //>>includeEnd('debug');
 
         options = defaultValue(options, defaultValue.EMPTY_OBJECT);
-        options.allowCrossOrigin = defaultValue(options.allowCrossOrigin, true);
+        var allowCrossOrigin = defaultValue(options.allowCrossOrigin, true);
+        var useCredentials = defaultValue(options.useCredentials, true);
 
         return when(url, function(url) {
             var crossOrigin;
 
             // data URIs can't have allowCrossOrigin set.
-            if (!dataUriRegex.test(url) && options.allowCrossOrigin && options.useCredentials !== true) {
-                options.allowCrossOrigin = isCrossOriginUrl(url);
+            if (!dataUriRegex.test(url) && allowCrossOrigin && useCredentials !== true) {
+                allowCrossOrigin = isCrossOriginUrl(url);
             }
 
             var deferred = when.defer();
 
-            if (options.allowCrossOrigin){
-                if (options.useCredentials) {
+            if (allowCrossOrigin){
+                if (useCredentials) {
                     crossOrigin = 'use-credentials';
                 }else{
                     crossOrigin = '';
