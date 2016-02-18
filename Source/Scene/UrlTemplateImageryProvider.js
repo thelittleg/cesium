@@ -664,8 +664,8 @@ define([
             } else {
                 return loadWithXhr({
                     url: url,
-                    headers : this.headers,
-                    withCredentials : this.withCredentials,
+                    headers : that.headers,
+                    withCredentials : that.withCredentials,
                     responseType: format.format
                 }).then(handleResponse.bind(undefined, format)).otherwise(doRequest);
             }
