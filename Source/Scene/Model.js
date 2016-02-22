@@ -1289,12 +1289,13 @@ define([
                         texturePromise = model._cache.get(imagePath);
                         if (defined(texturePromise)) {
                             ++model._loadResources.pendingTextureLoads;
-                            texturePromise.then(function(idTexture, textureCached) {
-                                this._rendererResources.textures[idTexture] = textureCached;
+                            texturePromise.ref();
+                            texturePromise.then(function(idTexture, promise, textureCached) {
+                                model._rendererResources.textures[idTexture] = textureCached;
                                 textureCached.ref();
+                                promise.unref();
                                 --model._loadResources.pendingTextureLoads;
-                                return textureCached;
-                            }.bind(model, id), function(error){
+                            }.bind(model, id, texturePromise), function(error){
                                 console.log("error", error);
                             });
                         }
@@ -1473,29 +1474,32 @@ define([
             rendererBuffers[bufferViewId] = vertexBuffer;
         }
 
-        // The Cesium Renderer requires knowing the datatype for an index buffer
-        // at creation type, which is not part of the glTF bufferview so loop
-        // through glTF accessors to create the bufferview's index buffer.
-        var accessors = model.gltf.accessors;
-        for (var id in accessors) {
-            if (accessors.hasOwnProperty(id)) {
-                var accessor = accessors[id];
-                bufferView = bufferViews[accessor.bufferView];
+        if (!loadResources.elementBufferCreated) {
+            // The Cesium Renderer requires knowing the datatype for an index buffer
+            // at creation type, which is not part of the glTF bufferview so loop
+            // through glTF accessors to create the bufferview's index buffer.
+            var accessors = model.gltf.accessors;
+            for (var id in accessors) {
+                if (accessors.hasOwnProperty(id)) {
+                    var accessor = accessors[id];
+                    bufferView = bufferViews[accessor.bufferView];
 
-                if ((bufferView.target === WebGLConstants.ELEMENT_ARRAY_BUFFER) && !defined(rendererBuffers[accessor.bufferView])) {
-                    var indexBuffer = Buffer.createIndexBuffer({
-                        context : context,
-                        typedArray : loadResources.getBuffer(bufferView),
-                        usage : BufferUsage.STATIC_DRAW,
-                        indexDatatype : accessor.componentType
-                    });
-                    indexBuffer.vertexArrayDestroyable = false;
-                    rendererBuffers[accessor.bufferView] = indexBuffer;
-                    // In theory, several glTF accessors with different componentTypes could
-                    // point to the same glTF bufferView, which would break this.
-                    // In practice, it is unlikely as it will be UNSIGNED_SHORT.
+                    if ((bufferView.target === WebGLConstants.ELEMENT_ARRAY_BUFFER) && !defined(rendererBuffers[accessor.bufferView])) {
+                        var indexBuffer = Buffer.createIndexBuffer({
+                            context: context,
+                            typedArray: loadResources.getBuffer(bufferView),
+                            usage: BufferUsage.STATIC_DRAW,
+                            indexDatatype: accessor.componentType
+                        });
+                        indexBuffer.vertexArrayDestroyable = false;
+                        rendererBuffers[accessor.bufferView] = indexBuffer;
+                        // In theory, several glTF accessors with different componentTypes could
+                        // point to the same glTF bufferView, which would break this.
+                        // In practice, it is unlikely as it will be UNSIGNED_SHORT.
+                    }
                 }
             }
+            loadResources.elementBufferCreated = true;
         }
     }
 

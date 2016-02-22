@@ -542,8 +542,7 @@ define([
 
         // Remove any tiles that were not used this frame beyond the number
         // we're allowed to keep.
-        if (!frameState.passes.pick)
-            primitive._tileReplacementQueue.trimTiles(primitive.tileCacheSize);
+        primitive._tileReplacementQueue.trimTiles(primitive.tileCacheSize);
 
         var startTime = getTimestamp();
         var timeSlice = primitive._loadQueueTimeSlice;
