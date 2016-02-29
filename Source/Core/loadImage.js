@@ -54,7 +54,7 @@ define([
 
         options = defaultValue(options, defaultValue.EMPTY_OBJECT);
         var allowCrossOrigin = defaultValue(options.allowCrossOrigin, true);
-        var useCredentials = defaultValue(options.useCredentials, true);
+        var useCredentials = defaultValue(options.withCredentials, false);
 
         return when(url, function(url) {
             var crossOrigin;

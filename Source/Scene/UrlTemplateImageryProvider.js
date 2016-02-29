@@ -553,6 +553,9 @@ define([
             that._rectangle = Rectangle.intersection(that._rectangle, that._tilingScheme.rectangle);
             that._hasAlphaChannel = defaultValue(properties.hasAlphaChannel, true);
 
+            that._withCredentials = defaultValue(properties.withCredentials, undefined);
+            that._headers = defaultValue(properties.headers, undefined);
+
             var credit = properties.credit;
             if (typeof credit === 'string') {
                 credit = new Credit(credit);

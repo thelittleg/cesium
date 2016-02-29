@@ -312,7 +312,11 @@ define([
                     withCredentials: imageryProvider.withCredentials
                 });
         }
-        return throttleRequestByServer(url, loadImage);
+        return throttleRequestByServer(url, loadImage,
+            {
+                headers: imageryProvider.headers,
+                withCredentials: imageryProvider.withCredentials
+            });
     };
 
     return ImageryProvider;

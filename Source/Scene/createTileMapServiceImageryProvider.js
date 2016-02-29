@@ -244,6 +244,7 @@ define([
                 tileDiscardPolicy : options.tileDiscardPolicy,
                 credit: options.credit,
                 pickFeaturesUrl: options.pickFeaturesUrl,
+                withCredentials: options.withCredentials,
                 getFeatureInfoFormats: options.getFeatureInfoFormats
             });
         }
@@ -275,6 +276,7 @@ define([
                 proxy : options.proxy,
                 tileDiscardPolicy : options.tileDiscardPolicy,
                 credit: options.credit,
+                withCredentials: options.withCredentials,
                 pickFeaturesUrl: options.pickFeaturesUrl,
                 getFeatureInfoFormats: options.getFeatureInfoFormats
             });
