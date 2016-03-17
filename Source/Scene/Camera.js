@@ -2509,7 +2509,8 @@ define([
         newOptions.easingFunction = options.easingFunction;
 
         var scene = this._scene;
-        scene.tweens.add(CameraFlightPath.createTween(scene, newOptions));
+
+        return scene.tweens.add(CameraFlightPath.createTween(scene, newOptions));
     };
 
     function distanceToBoundingSphere3D(camera, radius) {
@@ -2665,7 +2666,7 @@ define([
             Cartesian3.normalize(up, up);
         }
 
-        this.flyTo({
+        return this.flyTo({
             destination : position,
             orientation : {
                 direction : direction,
