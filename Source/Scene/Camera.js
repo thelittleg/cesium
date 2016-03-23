@@ -2507,6 +2507,7 @@ define([
         newOptions.convert = isRectangle ? false : options.convert;
         newOptions.maximumHeight = options.maximumHeight;
         newOptions.easingFunction = options.easingFunction;
+        newOptions.startTime = options.startTime;
 
         var scene = this._scene;
 
