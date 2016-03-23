@@ -241,6 +241,7 @@ define([
                 minimumLevel : minimumLevel,
                 maximumLevel : maximumLevel,
                 proxy : options.proxy,
+                maximumRequests: options.maximumRequests,
                 tileDiscardPolicy : options.tileDiscardPolicy,
                 credit: options.credit,
                 pickFeaturesUrl: options.pickFeaturesUrl,
@@ -276,6 +277,7 @@ define([
                 proxy : options.proxy,
                 tileDiscardPolicy : options.tileDiscardPolicy,
                 credit: options.credit,
+                maximumRequests: options.maximumRequests,
                 withCredentials: options.withCredentials,
                 pickFeaturesUrl: options.pickFeaturesUrl,
                 getFeatureInfoFormats: options.getFeatureInfoFormats

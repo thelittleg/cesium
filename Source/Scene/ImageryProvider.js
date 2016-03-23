@@ -309,13 +309,15 @@ define([
         if (defined(imageryProvider.tileDiscardPolicy)) {
             return throttleRequestByServer(url, loadImageViaBlob,
                 {   headers:imageryProvider.headers,
-                    withCredentials: imageryProvider.withCredentials
+                    withCredentials: imageryProvider.withCredentials,
+                    maximumRequests: imageryProvider.maximumRequests
                 });
         }
         return throttleRequestByServer(url, loadImage,
             {
                 headers: imageryProvider.headers,
-                withCredentials: imageryProvider.withCredentials
+                withCredentials: imageryProvider.withCredentials,
+                maximumRequests: imageryProvider.maximumRequests
             });
     };
 

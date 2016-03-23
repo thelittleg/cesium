@@ -55,12 +55,16 @@ define([
      *
      * @see {@link http://wiki.commonjs.org/wiki/Promises/A|CommonJS Promises/A}
      */
-    // THELITTLEG
     function throttleRequestByServer(url, requestFunction, options) {
         var server = getServer(url);
 
         var activeRequestsForServer = defaultValue(activeRequests[server], 0);
-        if (activeRequestsForServer >= throttleRequestByServer.maximumRequestsPerServer) {
+        var maximumRequests = throttleRequestByServer.maximumRequestsPerServer;
+        if (options.maximumRequests) {
+            maximumRequests = options.maximumRequests;
+        }
+
+        if (activeRequestsForServer >= maximumRequests) {
             return undefined;
         }
 

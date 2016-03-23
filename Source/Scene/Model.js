@@ -3218,7 +3218,7 @@ define([
         return undefined;
     };
 
-    function refResource(resourceArray) {
+    function refResources(resourceArray) {
         for (var key in resourceArray){
             if (resourceArray.hasOwnProperty(key) && resourceArray[key].ref) {
                 resourceArray[key].ref();
@@ -3228,48 +3228,48 @@ define([
 
     CachedRendererResources.prototype.init = function(resources) {
         this.buffers = resources.buffers;
-        refResource(this.buffers);
+        refResources(this.buffers);
 
         this.vertexArrays = resources.vertexArrays;
-        refResource(this.vertexArrays);
+        refResources(this.vertexArrays);
 
         this.programs = resources.programs;
-        refResource(this.programs);
+        refResources(this.programs);
 
         this.pickPrograms = resources.pickPrograms;
-        refResource(this.pickPrograms);
+        refResources(this.pickPrograms);
 
         this.textures = resources.textures;
-        refResource(this.textures);
+        refResources(this.textures);
 
         this.samplers = resources.samplers;
-        refResource(this.samplers);
+        refResources(this.samplers);
 
         this.renderStates = resources.renderStates;
-        refResource(this.renderStates);
+        refResources(this.renderStates);
     };
 
     CachedRendererResources.prototype.assign = function(resources) {
         resources.buffers = this.buffers;
-        refRessource(this.buffers);
+        refResources(this.buffers);
 
         resources.vertexArrays = this.vertexArrays;
-        refRessource(this.vertexArrays);
+        refResources(this.vertexArrays);
 
         resources.programs = this.programs;
-        refRessource(this.programs);
+        refResources(this.programs);
 
         resources.pickPrograms = this.pickPrograms;
-        refRessource(this.pickPrograms);
+        refResources(this.pickPrograms);
 
         resources.textures = this.textures;
-        refRessource(this.textures);
+        refResources(this.textures);
 
         resources.samplers = this.samplers;
-        refRessource(this.samplers);
+        refResources(this.samplers);
 
         resources.renderStates = this.renderStates;
-        refRessource(this.renderStates);
+        refResources(this.renderStates);
     };
 
     ///////////////////////////////////////////////////////////////////////////

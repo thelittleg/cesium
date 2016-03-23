@@ -508,6 +508,20 @@ define([
             get: function(){
                 return this._withCredentials;
             }
+        },
+
+        /**
+         * Gets credentials used by the imagery provider. value is undefined if no
+         * credentials is used.
+         * @memberof UrlTemplateImageryProvider.prototype
+         * @type {String}
+         * @readonly
+         * @default undefined
+         */
+        maximumRequests : {
+            get: function(){
+                return this._maximumRequests;
+            }
         }
     });
 
@@ -547,6 +561,7 @@ define([
             that._tileWidth = defaultValue(properties.tileWidth, 256);
             that._tileHeight = defaultValue(properties.tileHeight, 256);
             that._minimumLevel = defaultValue(properties.minimumLevel, 0);
+            that._maximumRequests = defaultValue(properties.maximumRequests, 6);
             that._maximumLevel = properties.maximumLevel;
             that._tilingScheme = defaultValue(properties.tilingScheme, new WebMercatorTilingScheme({ ellipsoid : properties.ellipsoid }));
             that._rectangle = defaultValue(properties.rectangle, that._tilingScheme.rectangle);
