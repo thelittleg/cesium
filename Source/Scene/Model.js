@@ -129,55 +129,6 @@ define([
         FAILED : 3
     };
 
-
-    var Cache = function Cache(name) {
-        this.map = {};
-        this.name= name;
-    };
-
-    Cache.prototype.get = function (id) {
-        return this.map[id];
-    };
-
-    Cache.prototype.clear = function () {
-        this.map = {};
-        return this;
-    };
-
-    Cache.prototype.size = function () {
-        var count = 0
-        for (var key in this.map) {
-            if (this.map.hasOwnProperty(key)){
-                count++;
-            }
-        }
-        return count;
-    };
-
-    Cache.prototype.set = function (id, data) {
-        this.map[id] = data;
-        var that = this;
-        data._cacheRefCount = 1;
-        data.ref = function () {
-            data._cacheRefCount++;
-        };
-        data.unref = function () {
-            data._cacheRefCount--;
-            if (data._cacheRefCount === 0) {
-                delete that.map[id];
-                if (data.destroy) {
-                    data.destroy();
-                }
-            }
-        };
-        return data;
-    }
-
-    var cache = {
-        textures: new Cache('texture'),
-        images: new Cache('image')
-    };
-
     // GLTF_SPEC: Figure out correct mime types (https://github.com/KhronosGroup/glTF/issues/412)
     var defaultModelAccept = 'model/vnd.gltf.binary,model/vnd.gltf+json,model/gltf.binary,model/gltf+json;q=0.8,application/json;q=0.2,*/*;q=0.01';
 
@@ -612,6 +563,8 @@ define([
         this._rtcCenterEye = undefined; // in eye coordinates
 
         this._loadOptions = options.loadOptions;
+
+        this._cache = options.cache;
     }
 
     defineProperties(Model.prototype, {
@@ -1134,7 +1087,7 @@ define([
      *
      */
     Model.cacheSize = function() {
-        return {textures:cache.textures.size(), images:cache.images.size()};
+        return {textures:model._cache.textures.size(), images:model._cache.images.size()};
     };
 
     var aMinScratch = new Cartesian3();
@@ -1340,27 +1293,35 @@ define([
                 } else {
                     var uri = new Uri(gltfImage.uri);
                     var imagePath = uri.resolve(model._baseUri).toString();
-                    var texture = cache.textures.get(imagePath);
-                    if (texture){
-                        texture.ref();
-                        model._rendererResources.textures[id] = texture;
-                    }else {
-                        var imagePromise = cache.images.get(imagePath);
-                        ++model._loadResources.pendingTextureLoads;
-                        if (defined(imagePromise)) {
-                            imagePromise.ref();
-                            imagePromise.then(function (idTexture, imageCached) {
-                                imageLoad(this, idTexture)(imageCached);
-                                imagePromise = undefined;
-                            }.bind(model, id));
+                    if (model._cache) {
+                        var texture = model._cache.textures.get(imagePath);
+                        if (texture) {
+                            texture.ref();
+                            model._rendererResources.textures[id] = texture;
                         } else {
-                            imagePromise = cache.images.set(imagePath, loadImage(imagePath).then(
-                                function (idImage, image) {
-                                    imageLoad(this, idImage)(image);
+                            var imagePromise = model._cache.images.get(imagePath);
+                            ++model._loadResources.pendingTextureLoads;
+                            if (defined(imagePromise)) {
+                                imagePromise.ref();
+                                imagePromise.then(function (idTexture, imageCached) {
+                                    imageLoad(this, idTexture)(imageCached);
                                     imagePromise = undefined;
-                                    return image;
-                                }.bind(model, id)).otherwise(getFailedLoadFunction(model, 'image', imagePath)));
+                                }.bind(model, id));
+                            } else {
+                                imagePromise = model._cache.images.set(imagePath, loadImage(imagePath).then(
+                                    function (idImage, image) {
+                                        imageLoad(this, idImage)(image);
+                                        imagePromise = undefined;
+                                        return image;
+                                    }.bind(model, id)).otherwise(getFailedLoadFunction(model, 'image', imagePath)));
+                            }
                         }
+                    }else{
+                        loadImage(imagePath).then(
+                            function (idImage, image) {
+                                imageLoad(this, idImage)(image);
+                                return image;
+                            }.bind(model, id)).otherwise(getFailedLoadFunction(model, 'image', imagePath));
                     }
                 }
             }
@@ -1724,12 +1685,14 @@ define([
     function createTexture(gltfTexture, model, context) {
 
         var imagePath = gltfTexture.image.src;
-        var texture = cache.textures.get(imagePath);
-        if (texture) {
-            model._rendererResources.textures[gltfTexture.id] = texture;
-            texture.ref();
-            cache.images.get(imagePath).unref();
-            return;
+        if (model._cache) {
+            var texture = model._cache.textures.get(imagePath);
+            if (texture) {
+                model._rendererResources.textures[gltfTexture.id] = texture;
+                texture.ref();
+                model._cache.images.get(imagePath).unref();
+                return;
+            }
         }
 
         var textures = model.gltf.textures;
@@ -1782,8 +1745,10 @@ define([
 
         model._rendererResources.textures[gltfTexture.id] = tx;
 
-        cache.textures.set(imagePath, tx);
-        cache.images.get(imagePath).unref();
+        if (model._cache) {
+            model._cache.textures.set(imagePath, tx);
+            model._cache.images.get(imagePath).unref();
+        }
     }
 
     function createTextures(model, context) {
@@ -3534,7 +3499,9 @@ define([
             while (textureToCreate.length) {
                 gltfTexture = textureToCreate.dequeue();
                 var imagePath = gltfTexture.image.src;
-                cache.images.get(imagePath).unref();
+                if (this._cache) {
+                    this._cache.images.get(imagePath).unref();
+                }
             }
         }
 

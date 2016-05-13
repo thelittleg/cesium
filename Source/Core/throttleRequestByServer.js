@@ -60,7 +60,7 @@ define([
 
         var activeRequestsForServer = defaultValue(activeRequests[server], 0);
         var maximumRequests = throttleRequestByServer.maximumRequestsPerServer;
-        if (options.maximumRequests) {
+        if (options && options.maximumRequests) {
             maximumRequests = options.maximumRequests;
         }
 
