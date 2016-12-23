@@ -21,11 +21,12 @@ define([
      *
      * @exports loadImage
      *
-     * @param {String|Promise.<String>} url The source of the image, or a promise for the URL.
+     * @param {String|Promise} url The source of the image, or a promise for the URL.
+     * @param {Object} [options] options to send with the requests.
      * @param {Boolean} [allowCrossOrigin=true] Whether to request the image using Cross-Origin
      *        Resource Sharing (CORS).  CORS is only actually used if the image URL is actually cross-origin.
      *        Data URIs are never requested using CORS.
-     * @returns {Promise.<Image>} a promise that will resolve to the requested data when loaded.
+     * @returns {Promise} a promise that will resolve to the requested data when loaded.
      *
      *
      * @example
@@ -40,30 +41,38 @@ define([
      * when.all([loadImage('image1.png'), loadImage('image2.png')]).then(function(images) {
      *     // images is an array containing all the loaded images
      * });
-     * 
+     *
      * @see {@link http://www.w3.org/TR/cors/|Cross-Origin Resource Sharing}
      * @see {@link http://wiki.commonjs.org/wiki/Promises/A|CommonJS Promises/A}
      */
-    function loadImage(url, allowCrossOrigin) {
+    function loadImage(url, options) {
         //>>includeStart('debug', pragmas.debug);
         if (!defined(url)) {
             throw new DeveloperError('url is required.');
         }
         //>>includeEnd('debug');
 
-        allowCrossOrigin = defaultValue(allowCrossOrigin, true);
+        options = defaultValue(options, defaultValue.EMPTY_OBJECT);
+        var allowCrossOrigin = defaultValue(options.allowCrossOrigin, true);
+        var useCredentials = defaultValue(options.withCredentials, false);
 
         return when(url, function(url) {
             var crossOrigin;
 
             // data URIs can't have allowCrossOrigin set.
-            if (dataUriRegex.test(url) || !allowCrossOrigin) {
-                crossOrigin = false;
-            } else {
-                crossOrigin = isCrossOriginUrl(url);
+            if (!dataUriRegex.test(url) && allowCrossOrigin && useCredentials !== true) {
+                allowCrossOrigin = isCrossOriginUrl(url);
             }
 
             var deferred = when.defer();
+
+            if (allowCrossOrigin){
+                if (useCredentials) {
+                    crossOrigin = 'use-credentials';
+                }else{
+                    crossOrigin = '';
+                }
+            }
 
             loadImage.createImage(url, crossOrigin, deferred);
 
@@ -83,9 +92,7 @@ define([
             deferred.reject(e);
         };
 
-        if (crossOrigin) {
-            image.crossOrigin = '';
-        }
+        image.crossOrigin = crossOrigin;
 
         image.src = url;
     };

@@ -288,6 +288,11 @@ define([
             duration = Math.min(duration, 3.0);
         }
 
+        var startTime = options.startTime;
+        if (!defined(startTime)) {
+            startTime = 0.0;
+        }
+
         var heading = defaultValue(options.heading, 0.0);
         var pitch = defaultValue(options.pitch, -CesiumMath.PI_OVER_TWO);
         var roll = defaultValue(options.roll, 0.0);
@@ -350,7 +355,7 @@ define([
             duration : duration,
             easingFunction : easingFunction,
             startObject : {
-                time : 0.0
+                time : startTime
             },
             stopObject : {
                 time : duration

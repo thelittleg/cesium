@@ -26,11 +26,11 @@ define([
      *
      * @exports loadJson
      *
-     * @param {String|Promise.<String>} url The URL to request, or a promise for the URL.
-     * @param {Object} [headers] HTTP headers to send with the request.
+     * @param {String|Promise} url The URL to request, or a promise for the URL.
+     * @param {Object} [options] options to send with the request.
      * 'Accept: application/json,&#42;&#47;&#42;;q=0.01' is added to the request headers automatically
      * if not specified.
-     * @returns {Promise.<Object>} a promise that will resolve to the requested data when loaded.
+     * @returns {Promise} a promise that will resolve to the requested data when loaded.
      *
      *
      * @example
@@ -39,27 +39,31 @@ define([
      * }).otherwise(function(error) {
      *     // an error occurred
      * });
-     * 
+     *
      * @see loadText
      * @see {@link http://www.w3.org/TR/cors/|Cross-Origin Resource Sharing}
      * @see {@link http://wiki.commonjs.org/wiki/Promises/A|CommonJS Promises/A}
      */
-    function loadJson(url, headers) {
+    function loadJson(url, options) {
         //>>includeStart('debug', pragmas.debug);
         if (!defined(url)) {
             throw new DeveloperError('url is required.');
         }
         //>>includeEnd('debug');
 
-        if (!defined(headers)) {
-            headers = defaultHeaders;
-        } else if (!defined(headers.Accept)) {
-            // clone before adding the Accept header
-            headers = clone(headers);
-            headers.Accept = defaultHeaders.Accept;
+        if (!defined(options)) {
+            options = {};
         }
 
-        return loadText(url, headers).then(function(value) {
+        if (!defined(options.headers)) {
+            options.headers = defaultHeaders;
+        } else if (!defined(options.headers.Accept)) {
+            // clone before adding the Accept header
+            options.headers = clone(options.headers);
+            options.headers.Accept = defaultHeaders.Accept;
+        }
+
+        return loadText(url, options).then(function(value) {
             return JSON.parse(value);
         });
     }

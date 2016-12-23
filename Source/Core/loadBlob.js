@@ -1,8 +1,10 @@
 /*global define*/
 define([
-        './loadWithXhr'
+        './loadWithXhr',
+        './defined'
     ], function(
-        loadWithXhr) {
+        loadWithXhr,
+        defined) {
     "use strict";
 
     /**
@@ -14,7 +16,7 @@ define([
      * @exports loadBlob
      *
      * @param {String|Promise.<String>} url The URL of the data, or a promise for the URL.
-     * @param {Object} [headers] HTTP headers to send with the requests.
+     * @param {Object} [options] options to send with the requests.
      * @returns {Promise.<Blob>} a promise that will resolve to the requested data when loaded.
      *
      *
@@ -25,15 +27,16 @@ define([
      * }).otherwise(function(error) {
      *     // an error occurred
      * });
-     * 
+     *
      * @see {@link http://www.w3.org/TR/cors/|Cross-Origin Resource Sharing}
      * @see {@link http://wiki.commonjs.org/wiki/Promises/A|CommonJS Promises/A}
      */
-    function loadBlob(url, headers) {
+    function loadBlob(url, options) {
         return loadWithXhr({
             url : url,
             responseType : 'blob',
-            headers : headers
+            headers :  defined(options)?options.headers:undefined,
+            withCredentials: defined(options)?options.withCredentials:undefined
         });
     }
 

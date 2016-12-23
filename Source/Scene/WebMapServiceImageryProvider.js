@@ -179,7 +179,9 @@ define([
             tileDiscardPolicy : options.tileDiscardPolicy,
             credit : options.credit,
             getFeatureInfoFormats : getFeatureInfoFormats,
-            enablePickFeatures: options.enablePickFeatures
+            enablePickFeatures: options.enablePickFeatures,
+            withCredentials :  options.withCredentials,
+            headers :  options.headers
         });
     }
 

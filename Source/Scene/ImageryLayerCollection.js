@@ -444,11 +444,7 @@ define([
                     for (var featureIndex = 0; featureIndex < result.length; ++featureIndex) {
                         var feature = result[featureIndex];
                         feature.imageryLayer = image;
-
-                        // For features without a position, use the picked location.
-                        if (!defined(feature.position)) {
-                            feature.position = pickedLocation;
-                        }
+                        feature.position = pickedLocation;
 
                         features.push(feature);
                     }

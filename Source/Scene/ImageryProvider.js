@@ -307,9 +307,18 @@ define([
      */
     ImageryProvider.loadImage = function(imageryProvider, url) {
         if (defined(imageryProvider.tileDiscardPolicy)) {
-            return throttleRequestByServer(url, loadImageViaBlob);
+            return throttleRequestByServer(url, loadImageViaBlob,
+                {   headers:imageryProvider.headers,
+                    withCredentials: imageryProvider.withCredentials,
+                    maximumRequests: imageryProvider.maximumRequests
+                });
         }
-        return throttleRequestByServer(url, loadImage);
+        return throttleRequestByServer(url, loadImage,
+            {
+                headers: imageryProvider.headers,
+                withCredentials: imageryProvider.withCredentials,
+                maximumRequests: imageryProvider.maximumRequests
+            });
     };
 
     return ImageryProvider;

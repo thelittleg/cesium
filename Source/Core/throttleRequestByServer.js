@@ -52,20 +52,25 @@ define([
      *     // handle loaded image
      *   });
      * }
-     * 
+     *
      * @see {@link http://wiki.commonjs.org/wiki/Promises/A|CommonJS Promises/A}
      */
-    function throttleRequestByServer(url, requestFunction) {
+    function throttleRequestByServer(url, requestFunction, options) {
         var server = getServer(url);
 
         var activeRequestsForServer = defaultValue(activeRequests[server], 0);
-        if (activeRequestsForServer >= throttleRequestByServer.maximumRequestsPerServer) {
+        var maximumRequests = throttleRequestByServer.maximumRequestsPerServer;
+        if (options && options.maximumRequests) {
+            maximumRequests = options.maximumRequests;
+        }
+
+        if (activeRequestsForServer >= maximumRequests) {
             return undefined;
         }
 
         activeRequests[server] = activeRequestsForServer + 1;
-
-        return when(requestFunction(url), function(result) {
+        // THELITTLEG
+        return when(requestFunction(url, options), function(result) {
             activeRequests[server]--;
             return result;
         }).otherwise(function(error) {

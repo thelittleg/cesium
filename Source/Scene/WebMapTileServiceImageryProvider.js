@@ -87,7 +87,7 @@ define([
      *     credit : new Cesium.Credit('U. S. Geological Survey')
      * });
      * viewer.imageryLayers.addImageryProvider(shadedRelief2);
-     * 
+     *
      * @see ArcGisMapServerImageryProvider
      * @see BingMapsImageryProvider
      * @see GoogleEarthImageryProvider
@@ -132,6 +132,9 @@ define([
         this._rectangle = defaultValue(options.rectangle, this._tilingScheme.rectangle);
 
         this._readyPromise = when.resolve(true);
+
+        this._headers = defaultValue(options.headers, undefined);
+        this._withCredentials = defaultValue(options.withCredentials, undefined);
 
         // Check the number of tiles at the minimum level.  If it's more than four,
         // throw an exception, because starting at the higher minimum
@@ -401,6 +404,31 @@ define([
         hasAlphaChannel : {
             get : function() {
                 return true;
+            }
+        },
+          /**
+         * Gets headers used by the imagery provider. value is undefined if no header is used.
+         * @memberof UrlTemplateImageryProvider.prototype
+         * @type {Object}
+         * @readonly
+         * @default undefined
+         */
+        headers : {
+            get: function(){
+                return this._headers;
+            }
+        },
+        /**
+         * Gets credentials used by the imagery provider. value is undefined if no
+         * credentials is used.
+         * @memberof UrlTemplateImageryProvider.prototype
+         * @type {String}
+         * @readonly
+         * @default undefined
+         */
+        withCredentials : {
+            get: function(){
+                return this._withCredentials;
             }
         }
     });

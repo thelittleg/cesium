@@ -30,6 +30,7 @@ define([
         '../Core/Quaternion',
         '../Core/Queue',
         '../Core/RuntimeError',
+        '../Core/throttleRequestByServer',
         '../Renderer/Buffer',
         '../Renderer/BufferUsage',
         '../Renderer/DrawCommand',
@@ -85,6 +86,7 @@ define([
         Quaternion,
         Queue,
         RuntimeError,
+        throttleRequestByServer,
         Buffer,
         BufferUsage,
         DrawCommand,
@@ -152,6 +154,7 @@ define([
         this.createRenderStates = true;
         this.createUniformMaps = true;
         this.createRuntimeNodes = true;
+        this.createElementBuffers = true;
 
         this.skinnedNodesIds = [];
     }
@@ -369,6 +372,8 @@ define([
         }
         setCachedGltf(this, cachedGltf);
 
+        this._shaderOverride = options.shaderOverride;
+
         this._basePath = defaultValue(options.basePath, '');
 
         var docUri = new Uri(document.location.href);
@@ -556,6 +561,10 @@ define([
         // CESIUM_RTC extension
         this._rtcCenter = undefined;    // in world coordinates
         this._rtcCenterEye = undefined; // in eye coordinates
+
+        this._loadOptions = options.loadOptions;
+
+        this._cache = options.cache;
     }
 
     defineProperties(Model.prototype, {
@@ -919,7 +928,26 @@ define([
      *   model.activeAnimations.addAll();
      * });
      */
+
+
     Model.fromGltf = function(options) {
+        //>>includeStart('debug', pragmas.debug);
+        if (!defined(options) || !defined(options.url)) {
+            throw new DeveloperError('options.url is required');
+        }
+        //>>includeEnd('debug');
+
+        var url = options.url;
+
+        var model = new Model(options);
+
+        model.loadGltf(url, options);
+
+        return model;
+    };
+
+
+    Model.prototype.loadGltf = function(options) {
         //>>includeStart('debug', pragmas.debug);
         if (!defined(options) || !defined(options.url)) {
             throw new DeveloperError('options.url is required');
@@ -934,7 +962,12 @@ define([
         options = clone(options);
         options.basePath = getBaseUri(url);
         options.cacheKey = cacheKey;
-        var model = new Model(options);
+
+        this._basePath =  options.basePath;
+        this._cacheKey = options.cacheKey;
+        var docUri = new Uri(document.location.href);
+        var modelUri = new Uri(this._basePath);
+        this._baseUri = modelUri.resolve(docUri);
 
         options.headers = defined(options.headers) ? clone(options.headers) : {};
         if (!defined(options.headers.Accept)) {
@@ -947,8 +980,8 @@ define([
                 ready : false
             });
             cachedGltf.count = 1;
-            cachedGltf.modelsToLoad.push(model);
-            setCachedGltf(model, cachedGltf);
+            cachedGltf.modelsToLoad.push(this);
+            setCachedGltf(this, cachedGltf);
             gltfCache[cacheKey] = cachedGltf;
 
             loadArrayBuffer(url, options.headers).then(function(arrayBuffer) {
@@ -964,18 +997,22 @@ define([
                 } else {
                     // Load text (JSON) glTF
                     var json = getStringFromTypedArray(array);
-                    cachedGltf.makeReady(JSON.parse(json));
+                    var gltf = JSON.parse(json);
+                    if (options.gltfModifier){
+                        gltf = options.gltfModifier(gltf);
+                    }
+                    cachedGltf.makeReady(gltf);
                 }
-            }).otherwise(getFailedLoadFunction(model, 'model', url));
+            }).otherwise(getFailedLoadFunction(this, 'model', url));
         } else if (!cachedGltf.ready) {
             // Cache hit but the loadArrayBuffer() or loadText() request is still pending
             ++cachedGltf.count;
-            cachedGltf.modelsToLoad.push(model);
+            cachedGltf.modelsToLoad.push(this);
         }
         // else if the cached glTF is defined and ready, the
         // model constructor will pick it up using the cache key.
 
-        return model;
+        return this._readyPromise;
     };
 
     /**
@@ -1043,6 +1080,16 @@ define([
         return getRuntime(this, 'materialsByName', name);
     };
 
+    /**
+     * Returns the cache size
+     *
+     * @returns {Object} The size of image cache and texture cache
+     *
+     */
+    Model.cacheSize = function() {
+        return {textures:model._cache.textures.size(), images:model._cache.images.size()};
+    };
+
     var aMinScratch = new Cartesian3();
     var aMaxScratch = new Cartesian3();
 
@@ -1056,7 +1103,7 @@ define([
         var nodeStack = [];
 
         var min = new Cartesian3(Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE);
-        var max = new Cartesian3(Number.MIN_VALUE, Number.MIN_VALUE, Number.MIN_VALUE);
+        var max = new Cartesian3(-Number.MAX_VALUE, -Number.MAX_VALUE, -Number.MAX_VALUE);
 
         for (var i = 0; i < rootNodesLength; ++i) {
             var n = gltfNodes[rootNodes[i]];
@@ -1120,7 +1167,7 @@ define([
             var loadResources = model._loadResources;
             loadResources.buffers[id] = new Uint8Array(arrayBuffer);
             --loadResources.pendingBufferLoads;
-         };
+        };
     }
 
     function parseBuffers(model) {
@@ -1166,33 +1213,41 @@ define([
                 bufferView : undefined
             };
             --loadResources.pendingShaderLoads;
-         };
+        };
     }
 
     function parseShaders(model) {
         var shaders = model.gltf.shaders;
-        for (var id in shaders) {
-            if (shaders.hasOwnProperty(id)) {
-                var shader = shaders[id];
+        if (!defined(model._shaderParser) || !model._shaderParser(shaders)) {
+            for (var id in shaders) {
+                if (shaders.hasOwnProperty(id)) {
+                    var shader = shaders[id];
 
-                // Shader references either uri (external or base64-encoded) or bufferView
-                if (defined(shader.extras) && defined(shader.extras.source)) {
-                    model._loadResources.shaders[id] = {
-                        source : shader.extras.source,
-                        bufferView : undefined
-                    };
-                }
-                else if (defined(shader.extensions) && defined(shader.extensions.KHR_binary_glTF)) {
-                    var binary = shader.extensions.KHR_binary_glTF;
-                    model._loadResources.shaders[id] = {
-                        source : undefined,
-                        bufferView : binary.bufferView
-                    };
-                } else {
-                    ++model._loadResources.pendingShaderLoads;
-                    var uri = new Uri(shader.uri);
-                    var shaderPath = uri.resolve(model._baseUri).toString();
-                    loadText(shaderPath).then(shaderLoad(model, id)).otherwise(getFailedLoadFunction(model, 'shader', shaderPath));
+                    // Shader references either uri (external or base64-encoded) or bufferView
+                    if (defined(shader.extras) && defined(shader.extras.source)) {
+                        model._loadResources.shaders[id] = {
+                            source: shader.extras.source,
+                            bufferView: undefined
+                        };
+                    }
+                    else if (defined(shader.extensions) && defined(shader.extensions.KHR_binary_glTF)) {
+                        var binary = shader.extensions.KHR_binary_glTF;
+                        model._loadResources.shaders[id] = {
+                            source: undefined,
+                            bufferView: binary.bufferView
+                        };
+                    } else {
+                        var shaderSource;
+                        if (model._shaderOverride && (shaderSource = model._shaderOverride(shader, id, model.gltf))) {
+                            ++model._loadResources.pendingShaderLoads;
+                            shaderLoad(model, id)(shaderSource);
+                        }else{
+                            ++model._loadResources.pendingShaderLoads;
+                            var uri = new Uri(shader.uri);
+                            var shaderPath = uri.resolve(model._baseUri).toString();
+                            loadText(shaderPath, model._loadOptions).then(shaderLoad(model, id)).otherwise(getFailedLoadFunction(model, 'shader', shaderPath));
+                        }
+                    }
                 }
             }
         }
@@ -1236,10 +1291,38 @@ define([
                         mimeType : binary.mimeType
                     });
                 } else {
-                    ++model._loadResources.pendingTextureLoads;
                     var uri = new Uri(gltfImage.uri);
                     var imagePath = uri.resolve(model._baseUri).toString();
-                    loadImage(imagePath).then(imageLoad(model, id)).otherwise(getFailedLoadFunction(model, 'image', imagePath));
+                    if (model._cache) {
+                        var texture = model._cache.textures.get(imagePath);
+                        if (texture) {
+                            texture.ref();
+                            model._rendererResources.textures[id] = texture;
+                        } else {
+                            var imagePromise = model._cache.images.get(imagePath);
+                            ++model._loadResources.pendingTextureLoads;
+                            if (defined(imagePromise)) {
+                                imagePromise.ref();
+                                imagePromise.then(function (idTexture, imageCached) {
+                                    imageLoad(this, idTexture)(imageCached);
+                                    imagePromise = undefined;
+                                }.bind(model, id));
+                            } else {
+                                imagePromise = model._cache.images.set(imagePath, loadImage(imagePath).then(
+                                    function (idImage, image) {
+                                        imageLoad(this, idImage)(image);
+                                        imagePromise = undefined;
+                                        return image;
+                                    }.bind(model, id)).otherwise(getFailedLoadFunction(model, 'image', imagePath)));
+                            }
+                        }
+                    }else{
+                        loadImage(imagePath).then(
+                            function (idImage, image) {
+                                imageLoad(this, idImage)(image);
+                                return image;
+                            }.bind(model, id)).otherwise(getFailedLoadFunction(model, 'image', imagePath));
+                    }
                 }
             }
         }
@@ -1402,32 +1485,36 @@ define([
                 usage : BufferUsage.STATIC_DRAW
             });
             vertexBuffer.vertexArrayDestroyable = false;
+
             rendererBuffers[bufferViewId] = vertexBuffer;
         }
 
-        // The Cesium Renderer requires knowing the datatype for an index buffer
-        // at creation type, which is not part of the glTF bufferview so loop
-        // through glTF accessors to create the bufferview's index buffer.
-        var accessors = model.gltf.accessors;
-        for (var id in accessors) {
-            if (accessors.hasOwnProperty(id)) {
-                var accessor = accessors[id];
-                bufferView = bufferViews[accessor.bufferView];
+        if (loadResources.createElementBuffers) {
+            // The Cesium Renderer requires knowing the datatype for an index buffer
+            // at creation type, which is not part of the glTF bufferview so loop
+            // through glTF accessors to create the bufferview's index buffer.
+            var accessors = model.gltf.accessors;
+            for (var id in accessors) {
+                if (accessors.hasOwnProperty(id)) {
+                    var accessor = accessors[id];
+                    bufferView = bufferViews[accessor.bufferView];
 
-                if ((bufferView.target === WebGLConstants.ELEMENT_ARRAY_BUFFER) && !defined(rendererBuffers[accessor.bufferView])) {
-                    var indexBuffer = Buffer.createIndexBuffer({
-                        context : context,
-                        typedArray : loadResources.getBuffer(bufferView),
-                        usage : BufferUsage.STATIC_DRAW,
-                        indexDatatype : accessor.componentType
-                    });
-                    indexBuffer.vertexArrayDestroyable = false;
-                    rendererBuffers[accessor.bufferView] = indexBuffer;
-                    // In theory, several glTF accessors with different componentTypes could
-                    // point to the same glTF bufferView, which would break this.
-                    // In practice, it is unlikely as it will be UNSIGNED_SHORT.
+                    if ((bufferView.target === WebGLConstants.ELEMENT_ARRAY_BUFFER) && !defined(rendererBuffers[accessor.bufferView])) {
+                        var indexBuffer = Buffer.createIndexBuffer({
+                            context: context,
+                            typedArray: loadResources.getBuffer(bufferView),
+                            usage: BufferUsage.STATIC_DRAW,
+                            indexDatatype: accessor.componentType
+                        });
+                        indexBuffer.vertexArrayDestroyable = false;
+                        rendererBuffers[accessor.bufferView] = indexBuffer;
+                        // In theory, several glTF accessors with different componentTypes could
+                        // point to the same glTF bufferView, which would break this.
+                        // In practice, it is unlikely as it will be UNSIGNED_SHORT.
+                    }
                 }
             }
+            loadResources.createElementBuffers = false;
         }
     }
 
@@ -1596,6 +1683,18 @@ define([
     }
 
     function createTexture(gltfTexture, model, context) {
+
+        var imagePath = gltfTexture.image.src;
+        if (model._cache) {
+            var texture = model._cache.textures.get(imagePath);
+            if (texture) {
+                model._rendererResources.textures[gltfTexture.id] = texture;
+                texture.ref();
+                model._cache.images.get(imagePath).unref();
+                return;
+            }
+        }
+
         var textures = model.gltf.textures;
         var texture = textures[gltfTexture.id];
 
@@ -1645,6 +1744,11 @@ define([
         }
 
         model._rendererResources.textures[gltfTexture.id] = tx;
+
+        if (model._cache) {
+            model._cache.textures.set(imagePath, tx);
+            model._cache.images.get(imagePath).unref();
+        }
     }
 
     function createTextures(model, context) {
@@ -1834,7 +1938,7 @@ define([
                  var parameters = animation.parameters;
                  var samplers = animation.samplers;
 
-                 var parameterValues = {};
+                var parameterValues = {};
 
                  for (var name in parameters) {
                      if (parameters.hasOwnProperty(name)) {
@@ -1842,21 +1946,21 @@ define([
                      }
                  }
 
-                 // Find start and stop time for the entire animation
-                 var startTime = Number.MAX_VALUE;
-                 var stopTime = -Number.MAX_VALUE;
+                // Find start and stop time for the entire animation
+                var startTime = Number.MAX_VALUE;
+                var stopTime = -Number.MAX_VALUE;
 
-                 var length = channels.length;
-                 var channelEvaluators = new Array(length);
+                var length = channels.length;
+                var channelEvaluators = new Array(length);
 
-                 for (var i = 0; i < length; ++i) {
-                     var channel = channels[i];
-                     var target = channel.target;
-                     var sampler = samplers[channel.sampler];
-                     var times = parameterValues[sampler.input];
+                for (var i = 0; i < length; ++i) {
+                    var channel = channels[i];
+                    var target = channel.target;
+                    var sampler = samplers[channel.sampler];
+                    var times = parameterValues[sampler.input];
 
-                     startTime = Math.min(startTime, times[0]);
-                     stopTime = Math.max(stopTime, times[times.length - 1]);
+                    startTime = Math.min(startTime, times[0]);
+                    stopTime = Math.max(stopTime, times[times.length - 1]);
 
                      var spline = ModelAnimationCache.getAnimationSpline(model, animationId, animation, channel.sampler, sampler, parameterValues);
                      // GLTF_SPEC: Support more targets like materials. https://github.com/KhronosGroup/glTF/issues/142
@@ -2718,14 +2822,14 @@ define([
         if (model._loadRendererResourcesFromCache) {
             var resources = model._rendererResources;
             var cachedResources = model._cachedRendererResources;
-
-            resources.buffers = cachedResources.buffers;
+            cachedResources.assign(resources);
+            /*resources.buffers = cachedResources.buffers;
             resources.vertexArrays = cachedResources.vertexArrays;
             resources.programs = cachedResources.programs;
             resources.pickPrograms = cachedResources.pickPrograms;
             resources.textures = cachedResources.textures;
             resources.samplers = cachedResources.samplers;
-            resources.renderStates = cachedResources.renderStates;
+            resources.renderStates = cachedResources.renderStates;*/
 
             // Vertex arrays are unique to this model, create instead of using the cache.
             if (defined(model._precreatedAttributes)) {
@@ -3049,7 +3153,11 @@ define([
     function destroy(property) {
         for (var name in property) {
             if (property.hasOwnProperty(name)) {
-                property[name].destroy();
+                if (defined(property[name].unref)) {
+                    property[name].unref();
+                }else {
+                    property[name].destroy();
+                }
             }
         }
     }
@@ -3073,6 +3181,60 @@ define([
         }
 
         return undefined;
+    };
+
+    function refResources(resourceArray) {
+        for (var key in resourceArray){
+            if (resourceArray.hasOwnProperty(key) && resourceArray[key].ref) {
+                resourceArray[key].ref();
+            }
+        }
+    };
+
+    CachedRendererResources.prototype.init = function(resources) {
+        this.buffers = resources.buffers;
+        refResources(this.buffers);
+
+        this.vertexArrays = resources.vertexArrays;
+        refResources(this.vertexArrays);
+
+        this.programs = resources.programs;
+        refResources(this.programs);
+
+        this.pickPrograms = resources.pickPrograms;
+        refResources(this.pickPrograms);
+
+        this.textures = resources.textures;
+        refResources(this.textures);
+
+        this.samplers = resources.samplers;
+        refResources(this.samplers);
+
+        this.renderStates = resources.renderStates;
+        refResources(this.renderStates);
+    };
+
+    CachedRendererResources.prototype.assign = function(resources) {
+        resources.buffers = this.buffers;
+        refResources(this.buffers);
+
+        resources.vertexArrays = this.vertexArrays;
+        refResources(this.vertexArrays);
+
+        resources.programs = this.programs;
+        refResources(this.programs);
+
+        resources.pickPrograms = this.pickPrograms;
+        refResources(this.pickPrograms);
+
+        resources.textures = this.textures;
+        refResources(this.textures);
+
+        resources.samplers = this.samplers;
+        refResources(this.samplers);
+
+        resources.renderStates = this.renderStates;
+        refResources(this.renderStates);
     };
 
     ///////////////////////////////////////////////////////////////////////////
@@ -3173,13 +3335,7 @@ define([
                 var resources = this._rendererResources;
                 var cachedResources = this._cachedRendererResources;
 
-                cachedResources.buffers = resources.buffers;
-                cachedResources.vertexArrays = resources.vertexArrays;
-                cachedResources.programs = resources.programs;
-                cachedResources.pickPrograms = resources.pickPrograms;
-                cachedResources.textures = resources.textures;
-                cachedResources.samplers = resources.samplers;
-                cachedResources.renderStates = resources.renderStates;
+                cachedResources.init(resources);
                 cachedResources.ready = true;
 
                 // Vertex arrays are unique to this model, do not store in cache.
@@ -3309,13 +3465,44 @@ define([
      *
      * @example
      * model = model && model.destroy();
-     * 
+     *
      * @see Model#isDestroyed
      */
+
+    function unrefResources(resourceArray) {
+        for (var key in resourceArray){
+            if (resourceArray.hasOwnProperty(key) && resourceArray[key].unref) {
+                resourceArray[key].unref();
+            }
+        }
+    };
+
     Model.prototype.destroy = function() {
         // Vertex arrays are unique to this model, destroy here.
         if (defined(this._precreatedAttributes)) {
             destroy(this._rendererResources.vertexArrays);
+        }
+
+        var resources = this._rendererResources;
+
+        unrefResources(resources.buffers);
+        unrefResources(resources.vertexArrays);
+        unrefResources(resources.programs);
+        unrefResources(resources.pickPrograms);
+        unrefResources(resources.textures);
+        unrefResources(resources.samplers);
+        unrefResources(resources.renderStates);
+
+        var gltfTexture;
+        if (this._loadResources) {
+            var textureToCreate = this._loadResources.texturesToCreate;
+            while (textureToCreate.length) {
+                gltfTexture = textureToCreate.dequeue();
+                var imagePath = gltfTexture.image.src;
+                if (this._cache) {
+                    this._cache.images.get(imagePath).unref();
+                }
+            }
         }
 
         this._rendererResources = undefined;

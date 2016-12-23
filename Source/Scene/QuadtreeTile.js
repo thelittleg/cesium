@@ -359,6 +359,7 @@ define([
 
         if (defined(this.data) && defined(this.data.freeResources)) {
             this.data.freeResources();
+            this.data = undefined;
         }
 
         if (defined(this._children)) {

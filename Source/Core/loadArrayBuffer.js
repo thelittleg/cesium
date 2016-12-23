@@ -1,8 +1,10 @@
 /*global define*/
 define([
-        './loadWithXhr'
+        './loadWithXhr',
+        './defined'
     ], function(
-        loadWithXhr) {
+        loadWithXhr,
+        defined) {
     "use strict";
 
     /**
@@ -14,8 +16,8 @@ define([
      * @exports loadArrayBuffer
      *
      * @param {String|Promise.<String>} url The URL of the binary data, or a promise for the URL.
-     * @param {Object} [headers] HTTP headers to send with the requests.
-     * @returns {Promise.<ArrayBuffer>} a promise that will resolve to the requested data when loaded.
+     * @param {Object} [options] options to send with the requests.
+     * @returns {Promise} a promise that will resolve to the requested data when loaded.
      *
      *
      * @example
@@ -25,15 +27,17 @@ define([
      * }).otherwise(function(error) {
      *     // an error occurred
      * });
-     * 
+     *
      * @see {@link http://www.w3.org/TR/cors/|Cross-Origin Resource Sharing}
      * @see {@link http://wiki.commonjs.org/wiki/Promises/A|CommonJS Promises/A}
      */
-    function loadArrayBuffer(url, headers) {
+    function loadArrayBuffer(url, options) {
         return loadWithXhr({
             url : url,
             responseType : 'arraybuffer',
-            headers : headers
+            headers :  defined(options)?options.headers:undefined,
+            overrideMimeType: defined(options)?options.overrideMimeType:undefined,
+            withCredentials: defined(options)?options.withCredentials:undefined
         });
     }
 

@@ -75,7 +75,7 @@ define([
      *     <li><code>{height}</code>: The height of each tile in pixels.</li>
      * </ul>
      * @param {String} [options.pickFeaturesUrl] The URL template to use to pick features.  If this property is not specified,
-     *                 {@see UrlTemplateImageryProvider#pickFeatures} will immediately returned undefined, indicating no
+     *                 {@link UrlTemplateImageryProvider#pickFeatures} will immediately returned undefined, indicating no
      *                 features picked.  The URL template supports all of the keywords supported by the <code>url</code>
      *                 parameter, plus the following:
      * <ul>
@@ -87,7 +87,7 @@ define([
      *     <li><code>{latitudeDegrees}</code>: The latitude of the picked position in degrees.</li>
      *     <li><code>{longitudeProjected}</code>: The longitude of the picked position in the projected coordinates of the tiling scheme.</li>
      *     <li><code>{latitudeProjected}</code>: The latitude of the picked position in the projected coordinates of the tiling scheme.</li>
-     *     <li><code>{format}</code>: The format in which to get feature information, as specified in the {@see GetFeatureInfoFormat}.</li>
+     *     <li><code>{format}</code>: The format in which to get feature information, as specified in the {@link GetFeatureInfoFormat}.</li>
      * </ul>
      * @param {String|String[]} [options.subdomains='abc'] The subdomains to use for the <code>{s}</code> placeholder in the URL template.
      *                          If this parameter is a single string, each character in the string is a subdomain.  If it is
@@ -183,6 +183,9 @@ define([
         this._hasAlphaChannel = undefined;
         this._readyPromise = undefined;
 
+        this._withCredentials = defaultValue(options.withCredentials, undefined);
+        this._headers = defaultValue(options.headers, undefined);
+
         /**
          * Gets or sets a value indicating whether feature picking is enabled.  If true, {@link UrlTemplateImageryProvider#pickFeatures} will
          * request the <code>options.pickFeaturesUrl</code> and attempt to interpret the features included in the response.  If false,
@@ -231,9 +234,9 @@ define([
 
         /**
          * Gets the URL template to use to use to pick features.  If this property is not specified,
-         * {@see UrlTemplateImageryProvider#pickFeatures} will immediately returned undefined, indicating no
+         * {@link UrlTemplateImageryProvider#pickFeatures} will immediately returned undefined, indicating no
          * features picked.  The URL template supports all of the keywords supported by the
-         * {@see UrlTemplateImageryProvider#url} property, plus the following:
+         * {@link UrlTemplateImageryProvider#url} property, plus the following:
          * <ul>
          *     <li><code>{i}</code>: The pixel column (horizontal coordinate) of the picked position, where the Westernmost pixel is 0.</li>
          *     <li><code>{j}</code>: The pixel row (vertical coordinate) of the picked position, where the Northernmost pixel is 0.</li>
@@ -243,7 +246,7 @@ define([
          *     <li><code>{latitudeDegrees}</code>: The latitude of the picked position in degrees.</li>
          *     <li><code>{longitudeProjected}</code>: The longitude of the picked position in the projected coordinates of the tiling scheme.</li>
          *     <li><code>{latitudeProjected}</code>: The latitude of the picked position in the projected coordinates of the tiling scheme.</li>
-         *     <li><code>{format}</code>: The format in which to get feature information, as specified in the {@see GetFeatureInfoFormat}.</li>
+         *     <li><code>{format}</code>: The format in which to get feature information, as specified in the {@link GetFeatureInfoFormat}.</li>
          * </ul>
          * @type {String}
          * @readonly
@@ -480,6 +483,45 @@ define([
                 //>>includeEnd('debug');
                 return this._hasAlphaChannel;
             }
+        },
+          /**
+         * Gets headers used by the imagery provider. value is undefined if no header is used.
+         * @memberof UrlTemplateImageryProvider.prototype
+         * @type {Object}
+         * @readonly
+         * @default undefined
+         */
+        headers : {
+            get: function(){
+                return this._headers;
+            }
+        },
+        /**
+         * Gets credentials used by the imagery provider. value is undefined if no
+         * credentials is used.
+         * @memberof UrlTemplateImageryProvider.prototype
+         * @type {String}
+         * @readonly
+         * @default undefined
+         */
+        withCredentials : {
+            get: function(){
+                return this._withCredentials;
+            }
+        },
+
+        /**
+         * Gets credentials used by the imagery provider. value is undefined if no
+         * credentials is used.
+         * @memberof UrlTemplateImageryProvider.prototype
+         * @type {String}
+         * @readonly
+         * @default undefined
+         */
+        maximumRequests : {
+            get: function(){
+                return this._maximumRequests;
+            }
         }
     });
 
@@ -487,7 +529,7 @@ define([
      * Reinitializes this instance.  Reinitializing an instance already in use is supported, but it is not
      * recommended because existing tiles provided by the imagery provider will not be updated.
      *
-     * @param {Promise|Object} options Any of the options that may be passed to the {@see UrlTemplateImageryProvider} constructor.
+     * @param {Promise|Object} options Any of the options that may be passed to the {@link UrlTemplateImageryProvider} constructor.
      */
     UrlTemplateImageryProvider.prototype.reinitialize = function(options) {
         var that = this;
@@ -519,11 +561,15 @@ define([
             that._tileWidth = defaultValue(properties.tileWidth, 256);
             that._tileHeight = defaultValue(properties.tileHeight, 256);
             that._minimumLevel = defaultValue(properties.minimumLevel, 0);
+            that._maximumRequests = defaultValue(properties.maximumRequests, 6);
             that._maximumLevel = properties.maximumLevel;
             that._tilingScheme = defaultValue(properties.tilingScheme, new WebMercatorTilingScheme({ ellipsoid : properties.ellipsoid }));
             that._rectangle = defaultValue(properties.rectangle, that._tilingScheme.rectangle);
             that._rectangle = Rectangle.intersection(that._rectangle, that._tilingScheme.rectangle);
             that._hasAlphaChannel = defaultValue(properties.hasAlphaChannel, true);
+
+            that._withCredentials = defaultValue(properties.withCredentials, undefined);
+            that._headers = defaultValue(properties.headers, undefined);
 
             var credit = properties.credit;
             if (typeof credit === 'string') {
@@ -620,17 +666,24 @@ define([
             var format = that._getFeatureInfoFormats[formatIndex];
             var url = buildPickFeaturesUrl(that, x, y, level, longitude, latitude, format.format);
 
+            var options = {
+                headers : that.headers,
+                withCredentials : that.withCredentials
+            };
+
             ++formatIndex;
 
             if (format.type === 'json') {
-                return loadJson(url).then(format.callback).otherwise(doRequest);
+                return loadJson(url, options).then(format.callback).otherwise(doRequest);
             } else if (format.type === 'xml') {
-                return loadXML(url).then(format.callback).otherwise(doRequest);
+                return loadXML(url, options).then(format.callback).otherwise(doRequest);
             } else if (format.type === 'text' || format.type === 'html') {
-                return loadText(url).then(format.callback).otherwise(doRequest);
+                return loadText(url, options).then(format.callback).otherwise(doRequest);
             } else {
                 return loadWithXhr({
                     url: url,
+                    headers : that.headers,
+                    withCredentials : that.withCredentials,
                     responseType: format.format
                 }).then(handleResponse.bind(undefined, format)).otherwise(doRequest);
             }
@@ -916,8 +969,11 @@ define([
         '{z}': zTag,
         '{s}': sTag,
         '{reverseX}': reverseXTag,
+        '{-x}': reverseXTag,
         '{reverseY}': reverseYTag,
+        '{-y}': reverseYTag,
         '{reverseZ}': reverseZTag,
+        '{-z}': reverseZTag,
         '{westDegrees}': westDegreesTag,
         '{southDegrees}': southDegreesTag,
         '{eastDegrees}': eastDegreesTag,
@@ -935,6 +991,8 @@ define([
         '{j}' : jTag,
         '{reverseI}' : reverseITag,
         '{reverseJ}' : reverseJTag,
+        '{-i}' : reverseITag,
+        '{-j}' : reverseJTag,
         '{longitudeDegrees}' : longitudeDegreesTag,
         '{latitudeDegrees}' : latitudeDegreesTag,
         '{longitudeProjected}' : longitudeProjectedTag,

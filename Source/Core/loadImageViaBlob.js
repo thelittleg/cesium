@@ -25,8 +25,8 @@ define([
      *
      * @exports loadImageViaBlob
      *
-     * @param {String|Promise.<String>} url The source of the image, or a promise for the URL.
-     * @returns {Promise.<Image>} a promise that will resolve to the requested data when loaded.
+     * @param {String|Promise} url The source of the image, or a promise for the URL.
+     * @returns {Promise} a promise that will resolve to the requested data when loaded.
      *
      *
      * @example
@@ -42,19 +42,19 @@ define([
      * when.all([loadImageViaBlob('image1.png'), loadImageViaBlob('image2.png')]).then(function(images) {
      *     // images is an array containing all the loaded images
      * });
-     * 
+     *
      * @see {@link http://www.w3.org/TR/cors/|Cross-Origin Resource Sharing}
      * @see {@link http://wiki.commonjs.org/wiki/Promises/A|CommonJS Promises/A}
      */
-    function loadImageViaBlob(url) {
+    function loadImageViaBlob(url, options) {
         if (dataUriRegex.test(url)) {
             return loadImage(url);
         }
 
-        return loadBlob(url).then(function(blob) {
+        return loadBlob(url, options).then(function(blob) {
             var blobUrl = window.URL.createObjectURL(blob);
 
-            return loadImage(blobUrl, false).then(function(image) {
+            return loadImage(blobUrl, {allowCrossOrigin : false}).then(function(image) {
                 image.blob = blob;
                 window.URL.revokeObjectURL(blobUrl);
                 return image;
