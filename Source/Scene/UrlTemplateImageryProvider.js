@@ -45,7 +45,7 @@ define([
         WebMercatorTilingScheme,
         when,
         ImageryProvider) {
-    "use strict";
+    'use strict';
 
     /**
      * Provides imagery by requesting tiles using a specified URL template.
@@ -127,7 +127,7 @@ define([
      * @example
      * // Access Natural Earth II imagery, which uses a TMS tiling scheme and Geographic (EPSG:4326) project
      * var tms = new Cesium.UrlTemplateImageryProvider({
-     *     url : '//cesiumjs.org/tilesets/imagery/naturalearthii/{z}/{x}/{reverseY}.jpg',
+     *     url : 'https://cesiumjs.org/tilesets/imagery/naturalearthii/{z}/{x}/{reverseY}.jpg',
      *     credit : '© Analytical Graphics, Inc.',
      *     tilingScheme : new Cesium.GeographicTilingScheme(),
      *     maximumLevel : 5

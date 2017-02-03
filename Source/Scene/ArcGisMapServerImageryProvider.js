@@ -47,7 +47,7 @@ define([
         DiscardMissingTileImagePolicy,
         ImageryLayerFeatureInfo,
         ImageryProvider) {
-    "use strict";
+    'use strict';
 
     /**
      * Provides tiled imagery hosted by an ArcGIS MapServer.  By default, the server's pre-cached tiles are
@@ -105,7 +105,7 @@ define([
      *
      * @example
      * var esri = new Cesium.ArcGisMapServerImageryProvider({
-     *     url: '//services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
+     *     url : 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
      * });
      * 
      * @see {@link http://resources.esri.com/help/9.3/arcgisserver/apis/rest/|ArcGIS Server REST API}

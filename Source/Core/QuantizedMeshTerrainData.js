@@ -31,7 +31,7 @@ define([
         TaskProcessor,
         TerrainEncoding,
         TerrainMesh) {
-    "use strict";
+    'use strict';
 
     /**
      * Terrain data for a single tile where the terrain data is represented as a quantized mesh.  A quantized
@@ -320,7 +320,8 @@ define([
                     occlusionPoint,
                     stride,
                     obb,
-                    terrainEncoding);
+                    terrainEncoding,
+                    exaggeration);
 
             // Free memory received from server after mesh is created.
             that._quantizedVertices = undefined;
@@ -408,7 +409,8 @@ define([
             isEastChild : isEastChild,
             isNorthChild : isNorthChild,
             childRectangle : childRectangle,
-            ellipsoid : ellipsoid
+            ellipsoid : ellipsoid,
+            exaggeration : mesh.exaggeration
         });
 
         if (!defined(upsamplePromise)) {

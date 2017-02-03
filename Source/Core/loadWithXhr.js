@@ -1,19 +1,19 @@
 /*global define*/
 define([
-    '../ThirdParty/when',
-    './defaultValue',
-    './defined',
-    './DeveloperError',
-    './RequestErrorEvent',
-    './RuntimeError'
-], function(
-    when,
-    defaultValue,
-    defined,
-    DeveloperError,
-    RequestErrorEvent,
-    RuntimeError) {
-    "use strict";
+        '../ThirdParty/when',
+        './defaultValue',
+        './defined',
+        './DeveloperError',
+        './RequestErrorEvent',
+        './RuntimeError'
+    ], function(
+        when,
+        defaultValue,
+        defined,
+        DeveloperError,
+        RequestErrorEvent,
+        RuntimeError) {
+    'use strict';
 
     /**
      * Asynchronously loads the given URL.  Returns a promise that will resolve to

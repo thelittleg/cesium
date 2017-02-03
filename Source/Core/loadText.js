@@ -5,7 +5,7 @@ define([
     ], function(
         loadWithXhr,
         defined) {
-    "use strict";
+    'use strict';
 
     /**
      * Asynchronously loads the given URL as text.  Returns a promise that will resolve to
