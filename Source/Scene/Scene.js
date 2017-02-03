@@ -2039,10 +2039,24 @@ define([
             scene.globe.beginFrame(frameState);
         }
 
+        for(var i=0; i<scene._primitives.length; i++){
+            var primitive = scene._primitives.get(i);
+            if(primitive.beginFrame) {
+                primitive.beginFrame(frameState);
+            }
+        }
+
         updateEnvironment(scene);
         updateAndExecuteCommands(scene, passState, defaultValue(scene.backgroundColor, Color.BLACK));
         resolveFramebuffers(scene, passState);
         executeOverlayCommands(scene, passState);
+
+        for(var i=0; i<scene._primitives.length; i++){
+            var primitive = scene._primitives.get(i);
+            if(primitive.endFrame) {
+                primitive.endFrame(frameState);
+            }
+        }
 
         if (defined(scene.globe)) {
             scene.globe.endFrame(frameState);
