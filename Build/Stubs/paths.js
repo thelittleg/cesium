@@ -594,6 +594,7 @@ define(function() {
         'ThirdParty/Autolinker' : '../Stubs/Cesium',
         'ThirdParty/gltfDefaults' : '../Stubs/Cesium',
         'ThirdParty/knockout-3.2.0' : '../Stubs/Cesium',
+        'ThirdParty/knockout-3.4.0' : '../Stubs/Cesium',
         'ThirdParty/knockout-es5' : '../Stubs/Cesium',
         'ThirdParty/knockout' : '../Stubs/Cesium',
         'ThirdParty/measureText' : '../Stubs/Cesium',

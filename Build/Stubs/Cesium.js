@@ -2370,6 +2370,10 @@ define('ThirdParty/knockout-3.2.0', function() {
     return Cesium['knockout-3.2.0'];
 });
 
+define('ThirdParty/knockout-3.4.0', function() {
+    return Cesium['knockout-3.4.0'];
+});
+
 define('ThirdParty/knockout-es5', function() {
     return Cesium['knockout-es5'];
 });
